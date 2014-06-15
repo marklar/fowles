@@ -1,0 +1,11 @@
+
+* steps
+** worker thread requests task from main collector thread
+** main collector thread requests task from server
+** server replies to main collector thread with next task
+** main collector thread replies to worker thread with task
+** worker thread pushes reply back to main collector thread
+** main collector thread pushes reply to results sink
+** results sink inserts into data store & notifies server that task is completed
+* timeout
+** if server doesn't get notification about a task within N seconds, then what?

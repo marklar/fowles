@@ -1,0 +1,108 @@
+* streamline the process of data collection on our cloud nodes
+
+* we know of:
+** channels: 300 million
+** videos:   1.4 billion
+
+
+* channel ID
+** UC + <20 alphanums>
+
+* sources of data
+** YouTube API
+*** Channel Level (CL)
+*** Video Level (VL)
+*** Uploaded Videos (UU prefix)
+**** for a channel
+**** stored in a playlist, w/ video IDs
+*** Channel Activity
+** html scrape
+*** PTK
+**** page: video watch
+**** collect quite a bit of info, but PTK is most significant
+**** PTK values: youtube_none, youtube_multi, <the_channel_id>, <mcn_name>
+**** Q: What does PTK stand for?
+
+* prioritize scheduling
+** interval based on significance of the channel or video
+*** daily:   already in portfolio
+*** weekly:  >50K lifetime views
+*** monthly: <50K lifetime views
+** problem: volume is very high, "so for the bigger pulls, local doesn't cut it."
+*** Q: What is "local"?  In other words, must be on AWS?
+
+* need to speed up
+** lots of data
+*** monthly channel pull: ~300M channels
+*** weekly video pull:    ~400M videos
+** collection time exceeds interval
+*** "Local isn't going to scale as we collect more data", so we need to streamline.
+
+* optimal design
+** cron job -> shell script -> multiple AWS servers are employed at collection
+** currently, manually on AWS
+
+* architecture
+** can't have all processes talk to DB
+*** AWS nodes run ~50 data collectors at a time
+*** too many, and:
+**** 1. overwhelms the DB server w/ connections
+**** 2. copying data back home also became an issue
+**** Amazon thought we were portscanning or contributing to DOS attacks.
+** bindle nexus
+*** built on 'flask', a python app server micro-framework
+*** data collection processes ping it to get a 'bindle' (unit) of work
+*** has 2 connex to the master DB
+**** 1. gets sequences in a concurrently safe manner
+**** 2. queries 'platform_place_id' (video id or channel id)
+***** SYS_COUNTER : one row per counter
+****** auto_video_level_weekly_id : size of chunks
+*** Allows a data collection process to ask: 'What are the next 500 videos ids that need refreshing?'
+** collector
+*** collects (i.e. queries or web scrapes)
+*** stores results in sqlite3 db file (basically just JSON)
+*** when unit is complete
+**** tars and gzips the results
+**** moves them to an output directory
+** pusherman
+*** monitors the output dir
+*** when files appear, it `scp`s them back to the office
+*** eliminates need for each data collection process to establish its own connection.
+
+* DB
+** 6 tables
+*** Channels
+**** updated daily
+**** updated weekly
+**** updated monthly
+*** Videos
+**** updated daily
+**** updated weekly
+**** updated monthly
+** each table has a seq_id column that is just an identity counter
+** there is a corresponding counter in the SYS_COUNTER table
+** schema
+*** seq_id : primary key
+*** platform_place_id : channel or video ID (up to 22 chars long)
+*** AUTO_DAILY_VIDEO_UPDATES
+*** AUTO_DAILY_CHANNEL_UPDATES
+** two data tables
+*** DATA_PLACES : each row has either channel/video
+*** DATA_ATTRIBUTES : (big) : all attrs stored
+**** num subs
+**** view count (at datetime)
+
+
+* process
+** set the counter to 1 (SYS_COUNTER table)
+** fire off a bunch of collection processes
+
+* additional collection processes
+** start manually out in AWS
+** clunky and error prone
+
+* no monitoring
+** if a process crashes -> can't know what was not done
+** improvement?
+*** push work rather than pull it
+**** thus: central location where finished work can be tallied

@@ -1,0 +1,50 @@
+
+* current system
+** has proprietary plumbing
+** not robust in face of failure
+*** points of failure
+**** node
+**** process (collector/nexus/pusherman/'transposer')
+*** broker serves as "monitor"
+** involves unnecessary intermediaries
+*** sqlite
+*** tar & gzip
+
+* connections
+** DB can handle only X connections
+** Rabbit is designed to handle LOTS
+** no need for a 'bindle nexus'
+
+* unit of work
+** simple
+*** a single video/channel to collect - don't need chunk sizes
+*** metes out work evenly - no need to own logic to handle that
+** robust
+*** broker handles msg resends as necessary
+
+* results
+** no need to store output in sqlite
+** publish msg to broker
+** consumer inserts into DB
+
+
+* design
+** main node
+*** RabbitMQ
+**** queue: 'collection_tasks'
+**** queue: 'results'
+*** publisher of tasks
+**** cron job
+**** simply publishes tasks and exits
+*** consumer of results
+**** inserts fetched data into DB
+**** only one DB connection necessary
+** collection node (AWS -or- local)
+*** collector
+**** roles
+***** consumer of tasks
+****** acks only after publishing
+***** publisher of results
+
+
+

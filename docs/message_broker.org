@@ -1,0 +1,93 @@
+
+message broker
+
+* producer
+* exchange
+* queue
+** mailbox, inside broker
+** storage for messages -- infinitely many
+* consumer
+
+* pika
+** python lib for AMQP
+** install with pip (python-pip), using pip-core
+
+* producing
+** establish connection
+#!/usr/bin/env python
+import pika
+
+connection = pika.BlockingConnection(pika.ConnectionParameters(
+               'localhost'))
+channel = connection.channel()
+** before sending, make sure recipient queue exists
+channel.queue_declare(queue='hello')
+** publish msg
+*** using default exchange ('')
+*** specify the queue in the routing_key ('hello')
+channel.basic_publish(exchange='',
+                      routing_key='hello',
+                      body='Hello World!')
+print " [x] Sent 'Hello World!'"
+** make sure buffers get flushed
+connection.close()
+
+* receiving
+** need no nothing about exchanges.  those are only for producers.
+** establish connection
+#!/usr/bin/env python
+import pika
+
+connection = pika.BlockingConnection(pika.ConnectionParameters(
+        host='localhost'))
+channel = connection.channel()
+** make sure queue exists
+channel.queue_declare(queue='hello')
+** define callback fn
+def callback(ch, method, properties, body):
+    print " [x] Received %r" % (body,)
+** subscribe callback to queue
+channel.basic_consume(callback,
+                      queue='hello',
+                      no_ack=True)
+** enter inf loop.  run callbacks whenver necessary.
+print ' [*] Waiting for messages. To exit press CTRL+C'
+channel.start_consuming()
+
+
+* work queue
+** parallelize work
+*** distribute time-consuming tasks among multiple workers
+*** if build up backlog, just add more workers
+*** by default, uses round-robin
+** msg ack
+*** in receiver: no_ack=True | False  (on by default)
+*** If a worker dies, we'd like the task to be delivered to another worker.
+*** "msg received, processed, and you're free to delete it"
+*** no timeouts
+**** RabbitMQ will redeliver the message only when the worker connection dies
+**** It's fine even if processing a message takes a very, very long time.
+*** to send, in callback:
+def callback(ch, method, properties, body):
+    print " [x] Received %r" % (body,)
+    time.sleep( body.count('.') )
+    print " [x] Done"
+    ch.basic_ack(delivery_tag = method.delivery_tag)
+** msg durability
+*** in case Rabbit itself goes down
+*** to do:
+**** mark queue as durable (in both producer & consumer)
+***** channel.queue_declare(queue='tasks', durable=True)
+**** mark msg as durable (delivery_mode: 2)
+channel.basic_publish(exchange='',
+                      routing_key="task_queue",
+                      body=message,
+                      properties=pika.BasicProperties(
+                         delivery_mode = 2, # make message persistent
+                      ))
+** normally, broker gives out msgs immediately
+*** each consumer receives multiple msgs, even before ack-ing
+*** to change
+channel.basic_qos(prefetch_count=1)
+
+

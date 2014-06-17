@@ -4,8 +4,8 @@
 
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/core.async "0.1.303.0-886421-alpha"]
+                 [org.clojure/data.json "0.2.5"]
                  [http-kit "2.1.16"]]
-                 ;; [org.clojure/data.json "0.2.4"]
                  ;; [org.clojure/core.match "0.2.1"]
                  ;; [org.clojure/tools.cli "0.3.1"]]
                  ;; [org.zeromq/cljzmq "0.1.5-SNAPSHOT"]]

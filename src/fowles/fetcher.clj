@@ -4,7 +4,7 @@
             [clojure.string :as str]
             [org.httpkit.client :as http]
             [clojure.core.async
-             :refer [chan go partition map< split >! <!]
+             :refer [chan go partition map< split >! <! take! alts!!]
              :as async]))
 
 ;;-------------------------------------------
@@ -31,20 +31,13 @@
          (hmap->query-string args))))
 
 
-;; Use `partition` to to create a channel
-;; which will create collections of items from another channel.
-;; Push individual video-ids onto A, partition them onto B.
+(def IDS_PER_QUERY 2)
 
 ;; Channels
 ;;   1. video-id   -> [video-id]                 (`partition`)
 ;;   2. [video-id] -> uri                        (`map<`)
 ;;   3. uri        -> response-promise           
 ;;   4. response-promise -> good-response | bad-response   (`split`)
-
-
-(def IDS_PER_QUERY 2)
-(defn query-count [seq]
-  (/ (count seq) IDS_PER_QUERY))
 
 (defn mk-pipeline-chan
   [api-key video-ids parts]
@@ -54,17 +47,22 @@
        ;; http://http-kit.org/client.html
        (async/map< #(deref (http/get %)))))
 
-;; this doesn't work
-;; async/close!))
-
-;; (doseq [vid-id video-ids]
-;; (go (async/>! ch vid-id)))
+(defn query-count [seq]
+  (/ (count seq) IDS_PER_QUERY))
 
 (defn -main []
   (let [video-ids ["7lCDEYXw3mM" "MjtOzLfebgY" "6QIw1BQIvT4" "2xJWQPdG7jE"]
         parts     ["snippet" "contentDetails" "statistics" "status"]
         ch        (mk-pipeline-chan api-key video-ids parts)]
-    (go (dotimes [_ (query-count video-ids)]
-          (println (async/<! ch))))
-    (Thread/sleep 10000)
+
+    ;; (go (dotimes [_ (query-count video-ids)]
+    ;;      (println (async/<! ch))))
+    ;;      ;; (async/take! ch println))
+    ;; (Thread/sleep 10000)
+
+    (dotimes [_ (query-count video-ids)]
+      (let [[v c] (async/alts!! [ch])]
+        (println v)))
+
+    (async/close! ch)
 ))

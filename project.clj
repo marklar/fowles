@@ -5,6 +5,7 @@
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/core.async "0.1.303.0-886421-alpha"]
                  [org.clojure/data.json "0.2.5"]
+                 [clj-time "0.7.0"]
                  [http-kit "2.1.16"]]
                  ;; [org.clojure/core.match "0.2.1"]
                  ;; [org.clojure/tools.cli "0.3.1"]]

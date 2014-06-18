@@ -24,7 +24,8 @@
 ;;--------------------------------
 
 ;; https://developers.google.com/youtube/v3/docs/videos/list?hl=ca
-(defn mk-video-uri [api-key video-ids]
+(defn mk-video-uri
+  [api-key video-ids]
   (let [args {:key api-key
               :id (csv video-ids)
               :part (csv PARTS)}]

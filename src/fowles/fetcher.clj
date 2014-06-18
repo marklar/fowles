@@ -8,7 +8,6 @@
              :refer [chan go partition map< split >! <! take! alts! alts!!]
              :as async]))
 
-(def BASE_URI "https://www.googleapis.com/youtube/v3/videos")
 (def IDS_PER_QUERY 2)
 
 ;;-------------------------------------------------
@@ -24,9 +23,6 @@
        (async/map< #(uris/mk-video-uri api-key %))
        (async/map< http/get)))
 
-;; Could also do this?
-;;   4. response -> good-response | bad-response   (`split`)
-
 (defn enq-fetches
   [api-key video-ids]
   (mk-pipeline-chan api-key video-ids))
@@ -35,19 +31,26 @@
 (defn enq-responses
   [from-ch to-ch]
   ;; Thread dedicated to gathering responses.
+  ;; We don't `map<' the channel because must make the `deref` async.
   (.start (Thread.
            #(loop []
-              ;; alts!! blocks until completed.
+              ;; `alts!!` blocks until completed.
               (let [[v c] (async/alts!! [from-ch])]
                 (if (nil? v)
+                  ;; Cannot `close!` here.  Might happen *before*
+                  ;; the other go-threads have a chance to `>!`.
                   ;; (async/close! to-ch)
                   nil
                   (do
                     (async/go (async/>! to-ch (deref v)))
                     (recur))))))))
 
+;; Could also do this?
+;; + response -> good-response | bad-response   (`split`)
+
 (defn deq-responses
   [from-ch]
+  ;; Thread dedicated to printing responses.
   (.start (Thread. #(loop []
                       (let [[v c] (async/alts!! [from-ch])]
                         (if (nil? v)
@@ -55,9 +58,6 @@
                           (do
                             (println v)
                             (recur))))))))
-
-(defn query-count [seq]
-  (/ (count seq) IDS_PER_QUERY))
 
 (defn -main []
   (if-let [api-key (cfg/get-api-key)]

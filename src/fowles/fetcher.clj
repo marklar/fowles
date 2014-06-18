@@ -5,7 +5,7 @@
              ;; [com.keminglabs.zmq-async.core :refer [register-socket!]]
             [org.httpkit.client :as http]
             [clojure.core.async
-             :refer [chan go partition map< split >! <! take! alts!!]
+             :refer [chan go partition map< split >! <! take! alts! alts!!]
              :as async]))
 
 (def BASE_URI "https://www.googleapis.com/youtube/v3/videos")
@@ -22,7 +22,6 @@
   (->> (async/to-chan video-ids)
        (async/partition IDS_PER_QUERY)
        (async/map< #(uris/mk-video-uri api-key %))
-       ;; http://http-kit.org/client.html
        (async/map< http/get)))
 
 ;; Could also do this?
@@ -32,18 +31,30 @@
   [api-key video-ids]
   (mk-pipeline-chan api-key video-ids))
 
+;; Use 'send' w/ agent?
 (defn enq-responses
-  [out-ch n-times]
-  (let [in-ch (chan)]
-    (go (dotimes [_ n-times]
-          (async/>! in-ch (deref (async/<! out-ch)))))
-    in-ch))
+  [from-ch to-ch]
+  ;; Thread dedicated to gathering responses.
+  (.start (Thread.
+           #(loop []
+              ;; alts!! blocks until completed.
+              (let [[v c] (async/alts!! [from-ch])]
+                (if (nil? v)
+                  ;; (async/close! to-ch)
+                  nil
+                  (do
+                    (async/go (async/>! to-ch (deref v)))
+                    (recur))))))))
 
 (defn deq-responses
-  [out-ch n-times]
-  (dotimes [_ n-times]
-    (let [[v c] (async/alts!! [out-ch])]
-      (println v))))
+  [from-ch]
+  (.start (Thread. #(loop []
+                      (let [[v c] (async/alts!! [from-ch])]
+                        (if (nil? v)
+                          nil
+                          (do
+                            (println v)
+                            (recur))))))))
 
 (defn query-count [seq]
   (/ (count seq) IDS_PER_QUERY))
@@ -52,11 +63,10 @@
   (if-let [api-key (cfg/get-api-key)]
     (time
      (let [video-ids    ["7lCDEYXw3mM" "MjtOzLfebgY" "6QIw1BQIvT4" "2xJWQPdG7jE"]
-           n-times      (query-count video-ids)
-           promises-ch  (enq-fetches api-key video-ids)
-           responses-ch (enq-responses promises-ch n-times)]
-       (deq-responses responses-ch n-times)
-       (async/close! promises-ch)
-       (async/close! responses-ch)
+           promise-ch   (enq-fetches api-key video-ids)
+           response-ch  (chan)]
+       (enq-responses promise-ch response-ch)
+       (deq-responses response-ch)
+       (while true)
        ))))
 

@@ -4,7 +4,7 @@
              :refer [chan go split >! alts!!]
              :as async]))
 
-(def BUFFER_SIZE 50)
+(def BUFFER_SIZE 100000)
 
 (defn- requeue-vals
   [from-ch to-ch]

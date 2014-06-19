@@ -1,5 +1,4 @@
 (ns fowles.searcher
-  ;; [com.keminglabs.zmq-async.core :refer [register-socket!]]
   (:require [fowles
              [cfg :as cfg]
              [admitter :as admitter]
@@ -13,7 +12,7 @@
   (->> (admitter/admit-query-words)
        (requester/request-searches api-key)
        gatherer/gather-responses
-       reporter/report-results)
+       reporter/report-search-result-ids)
   (while true))
 
 (defn -main []
@@ -21,4 +20,3 @@
     (if (nil? api-key)
       (println "Missing API key.")
       (search api-key))))
-

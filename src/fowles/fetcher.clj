@@ -1,5 +1,4 @@
 (ns fowles.fetcher
-  ;; [com.keminglabs.zmq-async.core :refer [register-socket!]]
   (:require [fowles
              [cfg :as cfg]
              [util :as util]

@@ -6,10 +6,7 @@
              :refer [chan go >! partition filter< map< alts!! to-chan]
              :as async]))
 
-(def IDS_PER_QUERY 4)
-
-(defn- longer? [n s]
-  (>= (count s) n))
+(def IDS_PER_QUERY 50)
 
 ;; Channels
 ;;   1. video-id   -> [video-id]
@@ -21,6 +18,11 @@
        (async/partition IDS_PER_QUERY)
        (map< #(uris/mk-video-uri api-key %))
        (map< http/get)))
+
+;;---------------------------
+
+(defn- longer? [n s]
+  (>= (count s) n))
 
 ;; Channels
 ;;   1. word -> word

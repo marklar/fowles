@@ -4,7 +4,9 @@
              :refer [chan go split >! alts!!]
              :as async]))
 
-(defn- foo
+(def BUFFER_SIZE 50)
+
+(defn- requeue-vals
   [from-ch to-ch]
   (loop []
     ;; `alts!!` blocks until completed.
@@ -20,14 +22,14 @@
   
 ;;-------------------------
 
-(defn gather
+(defn gather-responses
   ":: chan -> chan
    Given channel of response-promises,
    return a channel of actual responses.
    Runs thread which takes promises and async puts responses."
   [from-ch]
-  (let [to-ch (chan 50)]
+  (let [to-ch (chan BUFFER_SIZE)]
     ;; We don't `map<' the channel because must make the `deref` async.
-    (.start (Thread. #(foo from-ch to-ch)))
+    (.start (Thread. #(requeue-vals from-ch to-ch)))
     to-ch))
 

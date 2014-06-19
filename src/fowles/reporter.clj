@@ -11,7 +11,7 @@
   [response-json]
   (println response-json))
 
-(defn- foo
+(defn- dequeue
   [from-ch]
   (loop []
     (let [[v c] (alts!! [from-ch])]
@@ -23,8 +23,8 @@
 
 ;;------------
 
-(defn report
+(defn report-results
   ":: chan -> ()
    Given channel of responses, 'output' them in own Thread."
   [from-ch]
-  (.start (Thread. #(foo from-ch))))
+  (.start (Thread. #(dequeue from-ch))))

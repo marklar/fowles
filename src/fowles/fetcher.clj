@@ -2,11 +2,11 @@
   ;; [com.keminglabs.zmq-async.core :refer [register-socket!]]
   (:require [fowles
              [cfg :as cfg]
+             [util :as util]
              [admitter :as admitter]
              [requester :as requester]
              [gatherer :as gatherer]
-             [reporter :as reporter]]
-            [clj-time.core :as t]))
+             [reporter :as reporter]]))
 
 ;; The name of the channel describes its contents.
 ;; Threads / Channels
@@ -20,24 +20,14 @@
 
 (defn- fetch
   [api-key]
-  (->> (admitter/admit)
-       (requester/request api-key)
-       gatherer/gather
-       reporter/report)
+  (->> (admitter/admit-video-ids)
+       (requester/request-videos api-key)
+       gatherer/gather-responses
+       reporter/report-results)
   (while true))
 
-;; Why doesn't this work?
-(defn- prep-shutdown []
-  (let [start-time (t/now)]
-    (.addShutdownHook
-     (Runtime/getRuntime)
-     (Thread. (fn []
-                (let [elapsed (- t/now start-time)]
-                  (println "Shutting down...")
-                  (println "elapsed time:" elapsed)))))))
-
 (defn -main []
-  (prep-shutdown)
+  (util/prep-shutdown)
   (let [api-key (cfg/get-api-key)]
     (if (nil? api-key)
       (println "Missing API key.")

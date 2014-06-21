@@ -4,9 +4,12 @@
    + Data:   video-ids, queries.
    + Output: Put for requester."
   ;; [com.keminglabs.zmq-async.core :refer [register-socket!]]
+  (:refer-clojure :exclude [partition])
   (:require [clojure.java.io :as io]
             [clj-time.core :as t]
-            [clojure.core.async :refer [chan go >!!]]))
+            [clojure.core.async
+             :refer [chan go >!! partition]
+             :as async]))
 
 (def BUFFER_SIZE 100000)
 
@@ -28,17 +31,11 @@
 
 ;;------------
 
-(def VIDEO_IDS
-  ["7lCDEYXw3mM" "MjtOzLfebgY" "6QIw1BQIvT4" "2xJWQPdG7jE"])
-(def all-video-ids
-  (take 100 (cycle VIDEO_IDS)))
-
 (def VIDEO_IDS_FILE_NAME "video_ids.txt")
 
 (defn- enqueue-video-ids
   ":: chan -> ()"
   [to-ch]
-  ;; (enqueue to-ch all-video-ids))
   (let [video-ids (clojure.string/split-lines (slurp VIDEO_IDS_FILE_NAME))]
     (enqueue to-ch (take BUFFER_SIZE video-ids))))
 
@@ -74,10 +71,18 @@
 
 ;;----------------------
 
+;;
+;; TODO
+;; Use a timeout here to push whatever there is onto the channel
+;; if there are fewer than IDS_PER_QUERY there.
+;;
+
+(def IDS_PER_QUERY 5)
 (defn admit-video-ids
   ":: () -> chan"
   []
-  (admit enqueue-video-ids))
+  (async/partition IDS_PER_QUERY
+                   (admit enqueue-video-ids)))
 
 (defn admit-query-words
   ":: () -> chan"

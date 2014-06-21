@@ -4,6 +4,7 @@
              [util :as util]
              [admitter :as admitter]
              [uris :as uris]
+             [requester :as requester]
              [gatherer :as gatherer]
              [reporter :as reporter]]))
 
@@ -19,10 +20,11 @@
 
 (defn- fetch
   [api-key]
-  (->> (admitter/admit-video-ids)
-       (uris/video-uris api-key)
-       gatherer/gather-responses
-       reporter/report-results)
+  (let [in->id            (admitter/admit-video-ids)
+        id->uri           (uris/video-uris api-key in->id)
+        uri->promise      (requester/mk-promises id->uri)
+        promise->response (gatherer/gather-responses uri->promise)]
+    (reporter/report-results promise->response))
   (while true))
 
 (defn -main []

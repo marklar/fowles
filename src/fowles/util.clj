@@ -1,5 +1,8 @@
 (ns fowles.util
-  (:require [clj-time.core :as t]))
+  (:require [clj-time
+             [core :as t]
+             [coerce :as c]
+             ]))
 
 ;; Why doesn't this work?
 (defn prep-shutdown []
@@ -7,6 +10,6 @@
     (.addShutdownHook
      (Runtime/getRuntime)
      (Thread. (fn []
-                (let [elapsed (- t/now start-time)]
+                (let [elapsed (- (c/to-long t/now) (c/to-long start-time))]
                   (println "Shutting down...")
                   (println "elapsed time:" elapsed)))))))

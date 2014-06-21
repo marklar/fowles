@@ -10,10 +10,10 @@
 
 ;; The name of the channel describes its contents.
 ;; Threads / Channels
-;;   1. admitter  : take video-ids from wherever (zmq socket?), put for requester.
-;;   2. uris      : take video-ids, put URIs.
-;;   3. gatherer  : take URIs, async put responses.
-;;   4. reporter  : take responses, output wherever (zmq socket?)
+;;   1. admitter : take video-ids from wherever (zmq socket?), put for requester.
+;;   2. uris     : take video-ids, put URIs.
+;;   3. gatherer : take URIs, async put responses.
+;;   4. reporter : take responses, output wherever (zmq socket?)
 
 ;; Could also do this?
 ;; + response -> good-response | bad-response   (`split`)

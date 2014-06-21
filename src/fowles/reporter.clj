@@ -57,18 +57,23 @@
 
 ;;-----------------------
 
-(def VIDEO_IDS_FILE_NAME "io/video_ids.txt")
+;; (def VIDEO_IDS_FILE_NAME "io/video_ids.txt")
+(def IDS_FILE_NAME "io/video_and_channel_ids.txt")
 
-(defn- get-video-ids
+(defn- get-video-and-channel-ids
   [resp-body]
-  (let [items (get resp-body "items")]
-    (map #(-> % (get "id") (get "videoId")) items)))
+  (let [items   (get resp-body "items")
+        get-ids (fn [item]
+                  (let [v-id (-> item (get "id")      (get "videoId"))
+                        c-id (-> item (get "snippet") (get "channelId"))]
+                    (str v-id "\t" c-id)))]
+    (map get-ids items)))
 
-(defn- output-video-ids
+(defn- output-video-and-channel-ids
   [uris-ch response]
   (let [uri       (-> response :opts :url)
         resp-body (json/read-str (:body response))]
-    (append-strs-to-file (get-video-ids resp-body) VIDEO_IDS_FILE_NAME)
+    (append-strs-to-file (get-video-and-channel-ids resp-body) IDS_FILE_NAME)
     (queue-next-uri uris-ch uri resp-body)))
 
 ;;-----------------------
@@ -118,7 +123,7 @@
 (defn report-search-result-ids
   ":: (chan, chan) -> ()"
   [from-ch uri-ch]
-  (report from-ch (partial output-video-ids uri-ch)))
+  (report from-ch (partial output-video-and-channel-ids uri-ch)))
 
 (defn report-channel-ids
   ":: (chan, chan) -> ()"

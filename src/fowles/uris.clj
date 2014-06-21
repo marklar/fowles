@@ -85,7 +85,12 @@
 (defn- longer? [n s]
   (>= (count s) n))
 
-;; TODO: Add 'fields' parameter.
+(def FIELDS_SEARCH
+  (str "nextPageToken,"
+       "items("
+         "id(videoId),"
+         "snippet(channelId)"
+       ")"))
 
 ;; https://developers.google.com/youtube/v3/docs/search/list
 (defn- mk-search-uri
@@ -96,7 +101,9 @@
               :q (url-encode q)
               :maxResults MAX_RESULTS
               :order "viewCount"
-              :part (csv ["id" "snippet"])}]
+              :part (csv ["id" "snippet"])
+              :fields (url-encode FIELDS_SEARCH)
+              }]
     (mk-uri "search" args)))
 
 (defn search-uris

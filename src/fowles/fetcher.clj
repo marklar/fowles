@@ -2,10 +2,10 @@
   (:require [fowles
              [cfg :as cfg]
              [util :as util]
-             [admitter :as admitter]
-             [fetch-uris :as fetch-uris]
              [requester :as requester]
              [gatherer :as gatherer]
+             [fetch-admitter :as fetch-admitter]
+             [fetch-uris :as fetch-uris]
              [fetch-reporter :as fetch-reporter]]))
 
 ;; The name of the channel describes its contents.
@@ -20,7 +20,7 @@
 
 (defn- fetch
   [api-key]
-  (let [in->id            (admitter/admit-video-ids)
+  (let [in->id            (fetch-admitter/admit-video-ids)
         id->uri           (fetch-uris/fetch-uris api-key in->id)
         uri->promise      (requester/mk-promises id->uri)
         promise->response (gatherer/gather-responses uri->promise)]

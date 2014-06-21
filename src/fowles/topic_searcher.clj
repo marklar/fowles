@@ -7,15 +7,15 @@
    Get the channelId for those videos and save them."
   (:require [fowles
              [cfg :as cfg]
-             [admitter :as admitter]
-             [topic-uris :as topic-uris]
              [requester :as requester]
              [gatherer :as gatherer]
+             [topic-admitter :as topic-admitter]
+             [topic-uris :as topic-uris]
              [topic-reporter :as topic-reporter]]))
 
 (defn- search
   [api-key]
-  (let [in->topic         (admitter/admit-topics)
+  (let [in->topic         (topic-admitter/admit-topics)
         topic->uri        (topic-uris/topic-search-uris api-key in->topic)
         uri->promise      (requester/mk-promises topic->uri)
         promise->response (gatherer/gather-responses uri->promise)]

@@ -8,7 +8,7 @@
   (:require [fowles
              [cfg :as cfg]
              [admitter :as admitter]
-             [uris :as uris]
+             [topic-uris :as topic-uris]
              [requester :as requester]
              [gatherer :as gatherer]
              [topic-reporter :as topic-reporter]]))
@@ -16,7 +16,7 @@
 (defn- search
   [api-key]
   (let [in->topic         (admitter/admit-topics)
-        topic->uri        (uris/topic-search-uris api-key in->topic)
+        topic->uri        (topic-uris/topic-search-uris api-key in->topic)
         uri->promise      (requester/mk-promises topic->uri)
         promise->response (gatherer/gather-responses uri->promise)]
     (topic-reporter/report promise->response uri->promise))

@@ -3,7 +3,7 @@
              [cfg :as cfg]
              [util :as util]
              [admitter :as admitter]
-             [uris :as uris]
+             [fetch-uris :as fetch-uris]
              [requester :as requester]
              [gatherer :as gatherer]
              [fetch-reporter :as fetch-reporter]]))
@@ -21,7 +21,7 @@
 (defn- fetch
   [api-key]
   (let [in->id            (admitter/admit-video-ids)
-        id->uri           (uris/video-uris api-key in->id)
+        id->uri           (fetch-uris/fetch-uris api-key in->id)
         uri->promise      (requester/mk-promises id->uri)
         promise->response (gatherer/gather-responses uri->promise)]
     (fetch-reporter/report promise->response))

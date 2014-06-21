@@ -1,4 +1,4 @@
-(ns fowles.freebaser
+(ns fowles.topic-searcher
   "Do YouTube Data API 'search'.
    Only for:
      + type 'video'
@@ -11,8 +11,7 @@
              [uris :as uris]
              [requester :as requester]
              [gatherer :as gatherer]
-             [reporter :as reporter]]
-            [clj-time.core :as t]))
+             [topic-reporter :as topic-reporter]]))
 
 (defn- search
   [api-key]
@@ -20,7 +19,7 @@
         topic->uri        (uris/topic-search-uris api-key in->topic)
         uri->promise      (requester/mk-promises topic->uri)
         promise->response (gatherer/gather-responses uri->promise)]
-    (reporter/report-channel-ids promise->response uri->promise))
+    (topic-reporter/report promise->response uri->promise))
   (while true))
 
 (defn -main []

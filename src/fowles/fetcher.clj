@@ -6,7 +6,7 @@
              [uris :as uris]
              [requester :as requester]
              [gatherer :as gatherer]
-             [reporter :as reporter]]))
+             [fetch-reporter :as fetch-reporter]]))
 
 ;; The name of the channel describes its contents.
 ;; Threads / Channels
@@ -24,7 +24,7 @@
         id->uri           (uris/video-uris api-key in->id)
         uri->promise      (requester/mk-promises id->uri)
         promise->response (gatherer/gather-responses uri->promise)]
-    (reporter/report-results promise->response))
+    (fetch-reporter/report promise->response))
   (while true))
 
 (defn -main []

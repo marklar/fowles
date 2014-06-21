@@ -1,16 +1,11 @@
-(ns fowles.searcher
+(ns fowles.query-searcher
   (:require [fowles
              [cfg :as cfg]
              [admitter :as admitter]
              [uris :as uris]
              [requester :as requester]
              [gatherer :as gatherer]
-             [reporter :as reporter]]
-            [org.httpkit.client :as http]
-            [clojure.core.async
-             :refer [chan pipe map>]
-             :as async]
-            [clj-time.core :as t]))
+             [query-reporter :as query-reporter]]))
 
 (defn- search
   [api-key]
@@ -18,7 +13,7 @@
         word->uri         (uris/search-uris api-key in->word)
         uri->promise      (requester/mk-promises word->uri)
         promise->response (gatherer/gather-responses uri->promise)]
-    (reporter/report-search-result-ids promise->response uri->promise))
+    (query-reporter/report promise->response uri->promise))
   (while true))
 
 (defn -main []

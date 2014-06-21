@@ -2,7 +2,7 @@
   "Thread dedicated to outputing responses."
   (:require [clojure.data.json :as json]
             [clojure.java.io :as io]
-            [clojure.core.async :refer [chan alts!!]]))
+            [clojure.core.async :refer [go chan alts!! >!]]))
 
 (defn- append-strs-to-file
   [strs file-name]
@@ -10,14 +10,21 @@
   (with-open [wrtr (io/writer file-name :append true)]
     (doseq [s strs] (.write wrtr (str s "\n")))))
 
-(def VIDEO_IDS_FILE_NAME "video_ids.txt")
+;;-----------------------
 
-(defn- output-video-ids
-  [{:keys [body]}]
-  (let [resp-body (json/read-str body)
-        items     (get resp-body "items")
-        video-ids (map #(-> % (get "id") (get "videoId")) items)]
-    (append-strs-to-file video-ids VIDEO_IDS_FILE_NAME)))
+(defn- mk-page-uri
+  [uri page-token]
+  ;; If there's already a pageToken, it'll be the last query-string arg.
+  ;; So remove it.
+  (let [[root-uri] (clojure.string/split uri #"\&pageToken=")]
+    (str root-uri "&pageToken=" page-token)))
+
+(defn- queue-next-uri
+  [uris-ch prev-uri resp-body]
+  (if-let [page-token (get resp-body "nextPageToken")]
+    (let [new-uri (mk-page-uri prev-uri page-token)]
+      (println "new-uri:" new-uri)
+      (go (>! uris-ch new-uri)))))
 
 ;;-----------------------
 
@@ -30,6 +37,47 @@
   (spit VIDEO_DATA_FILE_NAME
         (:body response)
         :append true))
+
+;;-----------------------
+
+(def VIDEO_IDS_FILE_NAME "video_ids.txt")
+
+(defn- get-video-ids
+  [resp-body]
+  (let [items (get resp-body "items")]
+    (map #(-> % (get "id") (get "videoId")) items)))
+
+(defn- output-video-ids
+  [uris-ch response]
+  (let [uri       (-> response :opts :url)
+        resp-body (json/read-str (:body response))]
+    (append-strs-to-file (get-video-ids resp-body) VIDEO_IDS_FILE_NAME)
+    (queue-next-uri uris-ch uri resp-body)))
+
+;;-----------------------
+
+;;
+;; This is where we want to do the re-queue-ing.
+;; Need a reference here to the requester chan.
+;;
+;; Search results have a `nextPageToken` field.
+;; Also, `publishedAfter` and `publishedBefore`.
+;; If `nextPageToken` is present, push another URI onto queue.
+;; 
+
+(def CHANNEL_IDS_FILE_NAME "channel_ids.txt")
+
+(defn- get-channel-ids
+  [resp-body]
+  (let [items (get resp-body "items")]
+    (map #(-> % (get "snippet") (get "channelId")) items)))
+
+(defn- output-channel-ids
+  [uris-ch response]
+  (let [uri       (-> response :opts :url)
+        resp-body (json/read-str (:body response))]
+    (append-strs-to-file (get-channel-ids resp-body) CHANNEL_IDS_FILE_NAME)
+    (queue-next-uri uris-ch uri resp-body)))
 
 ;;-----------------------
 
@@ -58,5 +106,9 @@
   (report from-ch output-videos))
 
 (defn report-search-result-ids
-  [from-ch]
-  (report from-ch output-video-ids))
+  [from-ch uri-ch]
+  (report from-ch (partial output-video-ids uri-ch)))
+
+(defn report-channel-ids
+  [from-ch uri-ch]
+  (report from-ch (partial output-channel-ids uri-ch)))

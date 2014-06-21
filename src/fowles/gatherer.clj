@@ -1,7 +1,8 @@
 (ns fowles.gatherer
   "Thread dedicated to gathering responses."
-  (:require [clojure.core.async
-             :refer [chan go split >! alts!!]
+  (:require [org.httpkit.client :as http]
+            [clojure.core.async
+             :refer [chan go >! alts!!]
              :as async]))
 
 (def BUFFER_SIZE 100000)
@@ -17,15 +18,16 @@
         ;; (close! to-ch)
         nil
         (do
-          (go (>! to-ch (deref v)))
+          (go (>! to-ch @v))
           (recur))))))
   
 ;;-------------------------
 
 (defn gather-responses
   ":: chan -> chan
-   Given channel of response-promises,
-   return a channel of actual responses.
+   Given channel of URIs,
+   first map that to a channel of response-promises,
+   then return a channel of actual responses.
    Runs thread which takes promises and async puts responses."
   [from-ch]
   (let [to-ch (chan BUFFER_SIZE)]

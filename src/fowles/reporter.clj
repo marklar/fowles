@@ -4,6 +4,10 @@
             [clojure.java.io :as io]
             [clojure.core.async :refer [go chan alts!! >!]]))
 
+;;
+;; TODO: Rather than creating a new wrtr each time,
+;; create one the first time and then reuse.
+;;
 (defn- append-strs-to-file
   [strs file-name]
   ;; Is one of these more efficient than the other?
@@ -34,7 +38,7 @@
 
 ;;-----------------------
 
-(def VIDEO_DATA_FILE_NAME "output/video_data.txt")
+(def VIDEO_DATA_FILE_NAME "io/video_data.txt")
 
 (defn- get-item-jsons
   ":: json-str -> [json-str]"
@@ -53,7 +57,7 @@
 
 ;;-----------------------
 
-(def VIDEO_IDS_FILE_NAME "output/video_ids.txt")
+(def VIDEO_IDS_FILE_NAME "io/video_ids.txt")
 
 (defn- get-video-ids
   [resp-body]
@@ -69,7 +73,7 @@
 
 ;;-----------------------
 
-(def CHANNEL_IDS_FILE_NAME "output/channel_ids.txt")
+(def CHANNEL_IDS_FILE_NAME "io/channel_ids.txt")
 
 (defn- get-channel-ids
   [resp-body]

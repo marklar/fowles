@@ -31,7 +31,7 @@
 
 ;;------------
 
-(def VIDEO_IDS_FILE_NAME "video_ids.txt")
+(def VIDEO_IDS_FILE_NAME "io/video_ids.txt")
 
 (defn- enqueue-video-ids
   ":: chan -> ()"

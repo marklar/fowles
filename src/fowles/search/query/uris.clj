@@ -1,4 +1,4 @@
-(ns fowles.query-uris
+(ns fowles.search.query.uris
   (:require [fowles.uris :as uris]
             [clojure.core.async
              :refer [chan pipe filter> map<]

@@ -1,4 +1,4 @@
-(ns fowles.topic-searcher
+(ns fowles.search.topic.searcher
   "Do YouTube Data API 'search'.
    Only for:
      + type 'video'
@@ -8,18 +8,19 @@
   (:require [fowles
              [cfg :as cfg]
              [requester :as requester]
-             [gatherer :as gatherer]
-             [topic-admitter :as topic-admitter]
-             [topic-uris :as topic-uris]
-             [topic-reporter :as topic-reporter]]))
+             [gatherer :as gatherer]]
+            [fowles.search.topic
+             [admitter :as admitter]
+             [uris :as uris]
+             [reporter :as reporter]]))
 
 (defn- search
   [api-key]
-  (let [in->topic         (topic-admitter/admit-topics)
-        topic->uri        (topic-uris/topic-search-uris api-key in->topic)
+  (let [in->topic         (admitter/admit-topics)
+        topic->uri        (uris/topic-search-uris api-key in->topic)
         uri->promise      (requester/mk-promises topic->uri)
         promise->response (gatherer/gather-responses uri->promise)]
-    (topic-reporter/report promise->response uri->promise))
+    (reporter/report promise->response uri->promise))
   (while true))
 
 (defn -main []

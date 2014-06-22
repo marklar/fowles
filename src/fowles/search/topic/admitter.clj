@@ -1,4 +1,4 @@
-(ns fowles.topic-admitter
+(ns fowles.search.topic.admitter
   "Take in whatever input is required to perform data collection.
    + Source: from wherever (zmq socket?).
    + Data:   video-ids, queries.

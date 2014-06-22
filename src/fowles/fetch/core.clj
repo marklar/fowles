@@ -1,12 +1,13 @@
-(ns fowles.fetcher
+(ns fowles.fetch.core
   (:require [fowles
              [cfg :as cfg]
              [util :as util]
              [requester :as requester]
-             [gatherer :as gatherer]
-             [fetch-admitter :as fetch-admitter]
-             [fetch-uris :as fetch-uris]
-             [fetch-reporter :as fetch-reporter]]))
+             [gatherer :as gatherer]]
+            [fowles.fetch
+             [admitter :as admitter]
+             [uris :as uris]
+             [reporter :as reporter]]))
 
 ;; The name of the channel describes its contents.
 ;; Threads / Channels
@@ -20,11 +21,11 @@
 
 (defn- fetch
   [api-key]
-  (let [in->id            (fetch-admitter/admit-video-ids)
-        id->uri           (fetch-uris/fetch-uris api-key in->id)
+  (let [in->id            (admitter/admit-video-ids)
+        id->uri           (uris/video-uris api-key in->id)
         uri->promise      (requester/mk-promises id->uri)
         promise->response (gatherer/gather-responses uri->promise)]
-    (fetch-reporter/report promise->response))
+    (reporter/report promise->response))
   (while true))
 
 (defn -main []

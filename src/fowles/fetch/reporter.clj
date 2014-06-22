@@ -1,4 +1,4 @@
-(ns fowles.fetch-reporter
+(ns fowles.fetch.reporter
   "Thread dedicated to outputing responses."
   (:require [fowles.reporter :as reporter]
             [clojure.data.json :as json]))

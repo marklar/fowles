@@ -1,4 +1,4 @@
-(ns fowles.topic-reporter
+(ns fowles.search.topic.reporter
   "Thread dedicated to outputing responses."
   (:require [fowles.reporter :as reporter]
             [clojure.data.json :as json]))

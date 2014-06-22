@@ -1,10 +1,10 @@
-(ns fowles.query-admitter
+(ns fowles.search.query.admitter
   "Take in whatever input is required to perform data collection.
    + Source: from wherever (zmq socket?).
    + Data:   video-ids, queries.
    + Output: Put for requester."
   ;; [com.keminglabs.zmq-async.core :refer [register-socket!]]
-  (:require [fowles.admitter]
+  (:require [fowles.admitter :as admitter]
             [clojure.java.io :as io]
             [clojure.string :as str]))
 

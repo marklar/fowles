@@ -1,37 +1,36 @@
 (ns fowles.fetch.core
-  (:require [fowles
+  "Fetch videos by id (or list of ids)."
+  (:require [clojure.core.async :refer [chan]]
+            [fowles
              [cfg :as cfg]
              [util :as util]
-             [requester :as requester]
-             [gatherer :as gatherer]]
+             [requester :as requester]]
             [fowles.fetch
              [admitter :as admitter]
              [uris :as uris]
              [reporter :as reporter]]))
 
-;; The name of the channel describes its contents.
-;; Threads / Channels
-;;   1. admitter : take video-ids from wherever (zmq socket?), put for requester.
-;;   2. uris     : take video-ids, put URIs.
-;;   3. gatherer : take URIs, async put responses.
-;;   4. reporter : take responses, output wherever (zmq socket?)
-
-;; Could also do this?
-;; + response -> good-response | bad-response   (`split`)
+;; TODO: Add new channels.
+;;   + good-response-bodies - between gatherer and reporter
+;;   + failed-uris - between gatherer and for-later
+;; 
+;; Take response, view it, and if:
+;;   - good:
+;;     + if there's a nextPageToken, put new URI onto uri-ch
+;;     + put response-body onto channel for output-ing
+;;   - bad:
+;;     + if retriable, re-queue URI
+;;     + if not, put URI onto _failed_ channel
 
 (defn- fetch
   [api-key]
-  (let [in->id            (admitter/admit-video-ids)
-        id->uri           (uris/video-uris api-key in->id)
-        uri->promise      (requester/mk-promises id->uri)
-        promise->response (gatherer/gather-responses uri->promise)]
-    (reporter/report promise->response))
+  (let [sleep-ch      (chan)
+        ids-ch        (admitter/admit-video-ids)
+        uris-ch       (uris/video-uris api-key ids-ch)
+        responses-ch  (requester/get-responses uris-ch sleep-ch)]
+    (reporter/report responses-ch uris-ch sleep-ch))
   (while true))
 
 (defn -main []
   (util/prep-shutdown)
-  (let [api-key (cfg/get-api-key)]
-    (if (nil? api-key)
-      (println "Missing API key.")
-      (fetch api-key))))
-
+  (fetch (cfg/cfg-get :api-key)))

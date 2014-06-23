@@ -6,7 +6,8 @@
   ;; [com.keminglabs.zmq-async.core :refer [register-socket!]]
   (:require [fowles.admitter :as admitter]
             [clojure.java.io :as io]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [clojure.core.async :refer [>!! close!]]))
 
 (def WORDS_FILE "/usr/share/dict/words")
 (def NUM_WORDS 5)
@@ -15,12 +16,8 @@
   ":: chan -> ()"
   [to-ch]
   (let [words (str/split-lines (slurp WORDS_FILE))]
-    (admitter/enq to-ch (take NUM_WORDS words))))
-  ;; (with-open [rdr (io/reader WORDS_FILE)]
-  ;;   (doseq [word (line-seq rdr)]
-  ;;     (println word)
-  ;;     (>!! to-ch word))
-  ;;   (close! to-ch)))
+    (admitter/enq to-ch (take NUM_WORDS words)))
+  (close! to-ch))
 
 ;;------------------------------
 

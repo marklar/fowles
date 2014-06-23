@@ -1,8 +1,13 @@
 (ns fowles.search.query.core
-  (:require [fowles
+  "Perform YouTube Data API 'search'.
+   Only for:
+     + type 'video'
+     + matching query string
+   From each search result, grab the videoId and channelId."
+  (:require [clojure.core.async :refer [chan]]
+            [fowles
              [cfg :as cfg]
-             [requester :as requester]
-             [gatherer :as gatherer]]
+             [requester :as requester]]
             [fowles.search.query
              [admitter :as admitter]
              [uris :as uris]
@@ -10,15 +15,12 @@
 
 (defn- search
   [api-key]
-  (let [in->word          (admitter/admit-query-words)
-        word->uri         (uris/search-uris api-key in->word)
-        uri->promise      (requester/mk-promises word->uri)
-        promise->response (gatherer/gather-responses uri->promise)]
-    (reporter/report promise->response uri->promise))
+  (let [sleep-ch      (chan)
+        words-ch      (admitter/admit-query-words)
+        uris-ch       (uris/search-uris api-key words-ch)
+        responses-ch  (requester/get-responses uris-ch sleep-ch)]
+    (reporter/report responses-ch uris-ch sleep-ch))
   (while true))
 
 (defn -main []
-  (let [api-key (cfg/get-api-key)]
-    (if (nil? api-key)
-      (println "Missing API key.")
-      (search api-key))))
+  (search (cfg/cfg-get :api-key)))

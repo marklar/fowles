@@ -3,7 +3,7 @@
    + Source: from wherever (zmq socket?).
    + Data:   video-ids, queries.
    + Output: Put for requester."
-  (:require [clojure.core.async :refer [chan >!!] :as async]))
+  (:require [clojure.core.async :refer [chan >!!]]))
 
 (def BUFFER_SIZE 100000)
 

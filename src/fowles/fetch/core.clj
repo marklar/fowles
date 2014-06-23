@@ -16,6 +16,11 @@
 ;;   + failed-uris - between gatherer and for-later
 ;; 
 
+;;
+;; TODO: explicitly define all channels here.
+;; Then pass them into fns as necessary to use them.
+;;
+
 (defn- fetch
   [api-key]
   (let [sleep-ch      (chan)

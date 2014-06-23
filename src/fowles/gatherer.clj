@@ -3,6 +3,7 @@
    Pull response off responses-channel.
    In the case of search, if response contains a nextPageToken, queue up new URI."
   (:require [clojure.java.io :as io]
+            [cemerick.url :refer [url-decode]]
             [clojure.string :as str]
             [clojure.data.json :as json]
             [clojure.core.async :refer [chan go >!! >! alts!!]]))
@@ -37,31 +38,41 @@
   (let [[root-uri] (str/split uri #"\&pageToken=")]
     (str root-uri "&pageToken=" page-token)))
 
+(defn- get-first-id-from-fetch-uri
+  [uri]
+  (let [[before after]  (str/split uri #"\&id=")
+        [first-id rest] (str/split after #",")]
+    first-id))
+
 (defn- handle-bad-response
   ":: (hmap, chan) -> keyword"
   [{:keys [error status opts]} uris-ch]
-  (let [uri (:url opts)]
+  (let [uri (url-decode (:url opts))]
     (if (retriable? error status)
       ;; re-queue the same URI
       ;; TODO: add a "&retryNum=<num>" to end of URL.
       ;; That way we can track which ones get tried (and how often).
       (do
-        (println "** retrying:" uri)
-        (go (>!! uris-ch uri))
+        (println "** requeueing:" (get-first-id-from-fetch-uri uri))
+        (println "   error :" error)
+        (println "   status:" status)
+        (println "")
+        (go (>! uris-ch uri))
         :sleep)
       ;; report failure
       (do
-        (println "** failed:" uri)
+        (println "** failed:" (get-first-id-from-fetch-uri uri))
         (println "   error :" error)
         (println "   status:" status)
+        (println "")
         :no-sleep))))
 
 (defn- handle-good-response
   ":: (hmap, chan, chan) -> keyword"
   [{:keys [body opts]} uris-ch bodies-ch]
   (let [resp-body (json/read-str body)
-        uri (:url opts)]
-    (println "ok")
+        uri (url-decode (:url opts))]
+    (println "ok:" (get-first-id-from-fetch-uri uri))
     ;; use it
     (>!! bodies-ch resp-body)
     ;; queue up nextPage, if any

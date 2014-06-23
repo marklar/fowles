@@ -40,5 +40,6 @@
   (let [to-ch (->> (chan 1000)
                    (filter> #(longer? 2 %))
                    (map< #(mk-search-uri api-key %)))]
-    (pipe from-ch to-ch)
+    ;; DO NOT CLOSE
+    (pipe from-ch to-ch false)
     to-ch))

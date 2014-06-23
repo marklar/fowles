@@ -28,5 +28,6 @@
   [api-key from-ch]
   (let [to-ch (map< #(mk-topic-search-uri api-key %) (chan 1000))]
         ;; -> {topic-id, start-date, end-date}
-    (pipe from-ch to-ch)
+    ;; DO NOT CLOSE
+    (pipe from-ch to-ch false)
     to-ch))

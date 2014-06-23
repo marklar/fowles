@@ -50,5 +50,6 @@
   ":: (str, chan) -> chan"
   [api-key from-ch]
   (let [to-ch (map< #(mk-video-uri api-key %) (chan 1000))]
-    (pipe from-ch to-ch)
+    ;; DO NOT CLOSE CHAN.
+    (pipe from-ch to-ch false)
     to-ch))

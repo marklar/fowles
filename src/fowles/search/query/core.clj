@@ -7,7 +7,9 @@
   (:require [clojure.core.async :refer [chan]]
             [fowles
              [cfg :as cfg]
-             [requester :as requester]]
+             [util :as util]
+             [requester :as requester]
+             [gatherer :as gatherer]]
             [fowles.search.query
              [admitter :as admitter]
              [uris :as uris]
@@ -18,8 +20,9 @@
   (let [sleep-ch      (chan)
         words-ch      (admitter/admit-query-words)
         uris-ch       (uris/search-uris api-key words-ch)
-        responses-ch  (requester/get-responses uris-ch sleep-ch)]
-    (reporter/report responses-ch uris-ch sleep-ch))
+        responses-ch  (requester/get-responses uris-ch sleep-ch)
+        bodies-ch     (gatherer/gather responses-ch uris-ch sleep-ch)]
+    (util/report bodies-ch reporter/output-video-and-channel-ids))
   (while true))
 
 (defn -main []

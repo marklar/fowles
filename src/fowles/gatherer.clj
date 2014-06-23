@@ -1,11 +1,11 @@
-(ns fowles.reporter
+(ns fowles.gatherer
   "Thread dedicated to outputing responses.
    Pull response off responses-channel.
    In the case of search, if response contains a nextPageToken, queue up new URI."
   (:require [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.data.json :as json]
-            [clojure.core.async :refer [go >!! >! alts!!]]))
+            [clojure.core.async :refer [chan go >!! >! alts!!]]))
 
 (def RETRIABLE_STATUS_CODES
   #{500 502 503 504})
@@ -57,13 +57,13 @@
         :no-sleep))))
 
 (defn- handle-good-response
-  ":: (hmap, fn, chan) -> keyword"
-  [{:keys [body opts]} output-fn uris-ch]
+  ":: (hmap, chan, chan) -> keyword"
+  [{:keys [body opts]} uris-ch bodies-ch]
   (let [resp-body (json/read-str body)
         uri (:url opts)]
     (println "ok")
     ;; use it
-    (output-fn resp-body)
+    (>!! bodies-ch resp-body)
     ;; queue up nextPage, if any
     (if-let [page-token (get resp-body "nextPageToken")]
       (>!! uris-ch
@@ -71,13 +71,13 @@
     :no-sleep))
 
 (defn- handle-response
-  ":: (hmap, fn, chan) -> keyword
+  ":: (hmap, chan, chan) -> keyword
    Return either :sleep or :no-sleep, to indicate what to do."
-  [response output-fn uris-ch]
+  [response uris-ch bodies-ch]
   (let [{:keys [status error]} response]
     (if (or error (not (success? status)))
       (handle-bad-response response uris-ch)
-      (handle-good-response response output-fn uris-ch))))
+      (handle-good-response response uris-ch bodies-ch))))
 
 ;; (defn- get-sleep-secs
 ;;   ":: (keyword, int) -> int"
@@ -87,7 +87,7 @@
 ;;     (* prev-secs 2)))
 
 (defn- dequeue
-  [responses-ch uris-ch sleep-ch output-fn]
+  [responses-ch uris-ch sleep-ch bodies-ch]
   (loop [sleep? :no-sleep]
     ;; Possibly tell the requester thread to chill out for a sec.
     (if (= sleep? :sleep)
@@ -96,28 +96,15 @@
     (let [[response c] (alts!! [responses-ch])]
       (if (nil? response)
         nil
-        (let [new-sleep? (handle-response response output-fn uris-ch)]
+        (let [new-sleep? (handle-response response uris-ch bodies-ch)]
           (recur new-sleep?))))))
 
 ;;--------------------------------
 
-;;
-;; TODO: Rather than creating a new wrtr each time,
-;; create one the first time and then reuse.
-;;
-;; Is one of these more efficient than the other?
-;; (spit file-name
-;;       (str (str/join "\n" strs) "\n")
-;;       :append true))))
-;;
-(defn append-strs-to-file
-  ":: ([str], str) -> ()"
-  [strs file-name]
-  (with-open [wrtr (io/writer file-name :append true)]
-    (doseq [s strs] (.write wrtr (str s "\n")))))
-
-(defn report
-  ":: chan -> ()
+(defn gather
+  ":: (chan, chan, chan) -> chan
    Given channel of responses, 'output' them in own Thread."
-  [responses-ch uris-ch sleep-ch output-fn]
-  (.start (Thread. #(dequeue responses-ch uris-ch sleep-ch output-fn))))
+  [responses-ch uris-ch sleep-ch]
+  (let [bodies-ch (chan)]
+    (.start (Thread. #(dequeue responses-ch uris-ch sleep-ch bodies-ch)))
+    bodies-ch))

@@ -8,22 +8,23 @@
             [fowles
              [cfg :as cfg]
              [util :as util]
-             [requester :as requester]
-             [gatherer :as gatherer]]
+             [plumbing :as plumbing]]
             [fowles.search.query
              [admitter :as admitter]
              [uris :as uris]
              [reporter :as reporter]]))
 
+(defn- mk-uris-ch
+  [api-key]
+  (let [words-ch (admitter/admit-query-words)
+        uris-ch  (uris/search-uris api-key words-ch)]
+    uris-ch))
+
 (defn- search
   [api-key]
-  (let [sleep-ch      (chan)
-        words-ch      (admitter/admit-query-words)
-        uris-ch       (uris/search-uris api-key words-ch)
-        responses-ch  (requester/get-responses uris-ch sleep-ch)
-        bodies-ch     (gatherer/gather responses-ch uris-ch sleep-ch)]
-    (util/report bodies-ch reporter/output-video-and-channel-ids))
-  (while true))
+  (plumbing/report (mk-uris-ch api-key)
+                   reporter/output-video-and-channel-ids))
 
 (defn -main []
-  (search (cfg/cfg-get :api-key)))
+  (search (cfg/cfg-get :api-key))
+  (while true))

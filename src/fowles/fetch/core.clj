@@ -3,23 +3,11 @@
   (:require [clojure.core.async :refer [chan]]
             [fowles
              [cfg :as cfg]
-             [util :as util]
-             [requester :as requester]
-             [gatherer :as gatherer]]
+             [plumbing :as plumbing]]
             [fowles.fetch
              [admitter :as admitter]
              [uris :as uris]
              [reporter :as reporter]]))
-
-;;
-;; TODO: Add new channel:
-;;   + failed-uris - between gatherer and for-later
-;; 
-
-;;
-;; TODO: explicitly define all channels here.
-;; Then pass them into fns as necessary to use them.
-;;
 
 ;; 
 ;; The framework provides two hooks.
@@ -56,20 +44,19 @@
 ;;     we can also know when we're done and exit.
 ;;
 
+(defn- mk-uris-ch
+  [api-key]
+  (let [ids-ch  (admitter/admit-video-ids)
+        uris-ch (uris/video-uris api-key ids-ch)]
+    uris-ch))
 
 (defn- fetch
   [api-key]
-  (let [;; you must specify these parts
-        ids-ch        (admitter/admit-video-ids)
-        uris-ch       (uris/video-uris api-key ids-ch)
-        ;; let's hide these parts
-        sleep-ch      (chan)
-        responses-ch  (requester/get-responses uris-ch sleep-ch)
-        bodies-ch     (gatherer/gather responses-ch uris-ch sleep-ch)]
-    ;; then you specify this part
-    (util/report bodies-ch reporter/output-videos))
-  (while true))
+  (plumbing/report (mk-uris-ch api-key)
+                   reporter/output-videos))
+
+;;---------------
 
 (defn -main []
-  (util/prep-shutdown)
-  (fetch (cfg/cfg-get :api-key)))
+  (fetch (cfg/cfg-get :api-key))
+  (while true))

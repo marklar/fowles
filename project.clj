@@ -13,8 +13,8 @@
                  ;; [org.zeromq/cljzmq "0.1.5-SNAPSHOT"]]
                  ;; [com.keminglabs/zmq-async "0.1.0"]]
 
-  :main fowles.fetcher
-  :aot [fowles.fetcher]
+  :main fowles.fetch.core
+  :aot [fowles.fetch.core]
 
   :profiles {:dev {:dependencies [[midje "1.6.0"]]}})
 

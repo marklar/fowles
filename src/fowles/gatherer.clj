@@ -90,13 +90,6 @@
       (handle-bad-response response uris-ch)
       (handle-good-response response uris-ch bodies-ch))))
 
-;; (defn- get-sleep-secs
-;;   ":: (keyword, int) -> int"
-;;   [directive prev-secs]
-;;   (if (= directive :no-sleep)
-;;     0
-;;     (* prev-secs 2)))
-
 (defn- dequeue
   [responses-ch uris-ch sleep-ch bodies-ch]
   (loop [sleep? :no-sleep]

@@ -2,7 +2,7 @@
   "Access configuration info from file."
   (:require [fowles.cfg :as cfg]))
 
-(def FILE_NAME "fetch-cfg.json")
+(def FILE_NAME "fetch_cfg.json")
 
 (def file-cfg)
 (defn get-cfg []

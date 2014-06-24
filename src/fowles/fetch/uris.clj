@@ -1,8 +1,6 @@
 (ns fowles.fetch.uris
   (:require [fowles.uris :as uris]
-            [clojure.core.async
-             :refer [chan pipe map<]
-             :as async]))
+            [clojure.core.async :refer [chan pipe map<]]))
 
 ;;
 ;; https://developers.google.com/youtube/v3/getting-started#part
@@ -18,7 +16,7 @@
 ;; player: 0
 ;; recordingDetails: 2
 ;;
-(def PARTS_VIDEOS
+(def PARTS
   ["contentDetails"  ;; 2
    "snippet"         ;; 2
    "statistics"      ;; 2
@@ -27,7 +25,7 @@
    ])
 
 ;; https://developers.google.com/youtube/v3/getting-started#fields
-(def FIELDS_VIDEOS
+(def FIELDS
   (str 
    "items("
      "id,status,statistics,topicDetails,"
@@ -35,21 +33,27 @@
      "snippet(publishedAt,channelId,title,categoryId,liveBroadcastContent)"
    ")"))
 
+;;
+;; TODO: Make this more efficient.
+;; Currently it's reconstructing the entire URL
+;; with every set of video-ids.
+;;
 ;; https://developers.google.com/youtube/v3/docs/videos/list
 (defn- mk-video-uri
   ":: (str, [str]) -> str"
-  [api-key video-ids]
+  [api-key part fields video-ids]
   (let [args {:key api-key
               :id video-ids
-              :part PARTS_VIDEOS
-              :fields FIELDS_VIDEOS
+              :part part
+              :fields fields
               }]
     (uris/mk-uri "videos" args)))
 
 (defn video-uris
-  ":: (str, chan) -> chan"
-  [api-key from-ch]
-  (let [to-ch (map< #(mk-video-uri api-key %) (chan 1000))]
+  ":: (chan, str, [str], str) -> chan"
+  [from-ch api-key part fields]
+  (let [->uri (partial mk-video-uri api-key part fields)
+        to-ch (map< ->uri (chan))]
     ;; DO NOT CLOSE CHAN.
     (pipe from-ch to-ch false)
     to-ch))

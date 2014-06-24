@@ -7,13 +7,13 @@
   (http/get uri #(go (>! result-ch %))))
 
 (defn- sleep-or-get
-  [from-ch to-ch sleep-ch]
+  [from-ch to-ch sleep-ch batch-size frequency-ms sleep-ms]
   (loop [i 0]
 
-    (if (= i 5)
-      ;; We always sleep after every 5 requests.
+    (if (= i batch-size)
+      ;; We always pause after every batch.
       (do
-        (Thread/sleep 500)
+        (Thread/sleep frequency-ms)
         (recur 0))
 
       ;; Perhaps sleep, perhaps request.
@@ -21,9 +21,9 @@
        ;; The gatherer tells you to sleep.
        ;; Oblige only if didn't just do it.
        sleep-ch ([_] (if (> i 0)
-                       (do
-                         (println " ---- SLEEPING ----")
-                         (Thread/sleep 1000)))
+                       (do 
+                        (println " ---- SLEEPING ----")
+                         (Thread/sleep sleep-ms)))
                    (recur 0))
        
        ;; Grab a URI and do an async-get.  (Don't close.)
@@ -39,7 +39,10 @@
 
 (defn get-responses
   ":: chan -> chan"
-  [from-ch sleep-ch]
+  [from-ch sleep-ch batch-size frequency-ms sleep-ms]
   (let [to-ch (chan)]
-    (.start (Thread. #(sleep-or-get from-ch to-ch sleep-ch)))
+    (.start (Thread. #(sleep-or-get from-ch to-ch sleep-ch
+                                    batch-size
+                                    frequency-ms
+                                    sleep-ms)))
     to-ch))

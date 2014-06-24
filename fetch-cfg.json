@@ -1,0 +1,30 @@
+{
+    "uris": {
+        "api_key": nil,
+	"num_ids_per_request": 50,
+        "args": {
+            "part": [
+		"contentDetails",
+		"snippet",
+		"statistics",
+		"status",
+		"topicDetails"
+	    ],
+            "fields": "items(id,status,statistics,topicDetails,contentDetails(duration,licensedContent),snippet(publishedAt,channelId,title,categoryId,liveBroadcastContent))"
+	}
+    },
+
+    "concurrency": {
+	"batches": {
+	    "num_requests": 5,
+	    "frequency_ms": 250
+	},
+	"sleep_ms": 1000
+    },
+
+    "files": {
+	"input":  "io/video_and_channel_ids.txt",
+	"output": "io/fetch/video_json.txt",
+        "failed": "io/fetch/failed.txt"
+    }
+}

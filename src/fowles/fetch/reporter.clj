@@ -3,8 +3,6 @@
   (:require [fowles.util :as util]
             [clojure.data.json :as json]))
 
-(def VIDEO_DATA_FILE_NAME "io/video_data.txt")
-
 (defn- get-item-jsons
   ":: hmap -> [json-str]"
   [resp-body]
@@ -14,8 +12,7 @@
 ;;-------------------------------
 
 (defn output-videos
-  ":: hmap -> ()"
-  [resp-body]
+  ":: (str, hmap) -> ()"
+  [out-file resp-body]
   (let [item-json-strs (get-item-jsons resp-body)]
-    (util/append-strs-to-file item-json-strs
-                              VIDEO_DATA_FILE_NAME)))
+    (util/append-strs-to-file item-json-strs out-file)))

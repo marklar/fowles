@@ -5,7 +5,7 @@
    + Output: Put for requester."
   (:require [clojure.core.async :refer [chan >!!]]))
 
-(def BUFFER_SIZE 100000)
+(def BUFFER_SIZE 1000)
 
 (defn enq
   "Enqueue some fixed sequence of items to to-ch.

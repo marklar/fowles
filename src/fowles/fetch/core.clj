@@ -1,10 +1,9 @@
 (ns fowles.fetch.core
   "Fetch videos by id (or list of ids)."
   (:require [clojure.core.async :refer [chan]]
-            [fowles
-             [cfg :as cfg]
-             [plumbing :as plumbing]]
+            [fowles.plumbing :as plumbing]
             [fowles.fetch
+             [cfg :as cfg]
              [admitter :as admitter]
              [uris :as uris]
              [reporter :as reporter]]))
@@ -44,19 +43,28 @@
 ;;     we can also know when we're done and exit.
 ;;
 
-(defn- mk-uris-ch
-  [api-key]
-  (let [ids-ch  (admitter/admit-video-ids)
-        uris-ch (uris/video-uris api-key ids-ch)]
+(defn- mk-uris-ch []
+  (let [ids-ch (admitter/admit-video-ids-from-file
+                (cfg/in-file)
+                (cfg/num-per-request))
+        uris-ch (uris/video-uris ids-ch
+                                 (cfg/api-key)
+                                 (cfg/part)
+                                 (cfg/fields))]
     uris-ch))
 
-(defn- fetch
-  [api-key]
-  (plumbing/report (mk-uris-ch api-key)
-                   reporter/output-videos))
+(defn- fetch []
+  (plumbing/report (mk-uris-ch)
+                   (cfg/batch-size)
+                   (cfg/frequency-ms)
+                   (cfg/sleep-ms)
+                   (cfg/failed-file)
+                   (partial reporter/output-videos
+                            (cfg/out-file))))
 
 ;;---------------
 
 (defn -main []
-  (fetch (cfg/cfg-get :api-key))
+  (cfg/validate)
+  (fetch)
   (while true))

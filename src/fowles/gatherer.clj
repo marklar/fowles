@@ -45,8 +45,8 @@
     first-id))
 
 (defn- handle-bad-response
-  ":: (hmap, chan) -> keyword"
-  [{:keys [error status opts]} uris-ch]
+  ":: (hmap, chan, str) -> keyword"
+  [{:keys [error status opts]} uris-ch failed-file]
   (let [uri (url-decode (:url opts))]
     (if (retriable? error status)
       ;; re-queue the same URI
@@ -61,6 +61,9 @@
         :sleep)
       ;; report failure
       (do
+        ;; write failed uri to file
+        (spit failed-file (str uri "\n") :append true)
+        ;; stdout
         (println "** failed:" (get-first-id-from-fetch-uri uri))
         (println "   error :" error)
         (println "   status:" status)
@@ -82,16 +85,16 @@
     :no-sleep))
 
 (defn- handle-response
-  ":: (hmap, chan, chan) -> keyword
+  ":: (hmap, chan, chan, str) -> keyword
    Return either :sleep or :no-sleep, to indicate what to do."
-  [response uris-ch bodies-ch]
+  [response uris-ch bodies-ch failed-file]
   (let [{:keys [status error]} response]
     (if (or error (not (success? status)))
-      (handle-bad-response response uris-ch)
+      (handle-bad-response response uris-ch failed-file)
       (handle-good-response response uris-ch bodies-ch))))
 
 (defn- dequeue
-  [responses-ch uris-ch sleep-ch bodies-ch]
+  [responses-ch uris-ch sleep-ch bodies-ch failed-file]
   (loop [sleep? :no-sleep]
     ;; Possibly tell the requester thread to chill out for a sec.
     (if (= sleep? :sleep)
@@ -100,7 +103,7 @@
     (let [[response c] (alts!! [responses-ch])]
       (if (nil? response)
         nil
-        (let [new-sleep? (handle-response response uris-ch bodies-ch)]
+        (let [new-sleep? (handle-response response uris-ch bodies-ch failed-file)]
           (recur new-sleep?))))))
 
 ;;--------------------------------
@@ -108,7 +111,7 @@
 (defn gather
   ":: (chan, chan, chan) -> chan
    Given channel of responses, 'output' them in own Thread."
-  [responses-ch uris-ch sleep-ch]
+  [responses-ch uris-ch sleep-ch failed-file]
   (let [bodies-ch (chan)]
-    (.start (Thread. #(dequeue responses-ch uris-ch sleep-ch bodies-ch)))
+    (.start (Thread. #(dequeue responses-ch uris-ch sleep-ch bodies-ch failed-file)))
     bodies-ch))

@@ -9,28 +9,21 @@
             [clojure.string :as str]
             [clojure.core.async :refer [partition] :as async]))
 
-(def VIDEO_IDS_FILE_NAME "io/video_and_channel_ids.txt")
-
 (def BUFFER_SIZE 1000)
 
-(defn- enq-video-ids
+;; FIXME: Don't enqueue all of them at once.
+(defn- enq-video-ids-from-file
   ":: chan -> ()"
-  [to-ch]
-  (let [lines     (str/split-lines (slurp VIDEO_IDS_FILE_NAME))
+  [in-file to-ch]
+  (let [lines     (str/split-lines (slurp in-file))
         video-ids (map #(first (str/split % #"\t")) lines)]
-    (admitter/enq to-ch (take BUFFER_SIZE video-ids))))
-
-;;
-;; TODO
-;; Use a timeout here to push whatever there is onto the channel
-;; if there are fewer than IDS_PER_QUERY there.
-;;
+    (admitter/enq to-ch video-ids)))
 
 ;;--------------------------
 
-(def IDS_PER_QUERY 5)
-(defn admit-video-ids
-  ":: () -> chan"
-  []
-  (async/partition IDS_PER_QUERY
-                   (admitter/admit enq-video-ids)))
+(defn admit-video-ids-from-file
+  ":: str-file-name -> chan"
+  [in-file num-per-request]
+  (async/partition num-per-request
+                   (admitter/admit (partial enq-video-ids-from-file in-file))
+                   BUFFER_SIZE))

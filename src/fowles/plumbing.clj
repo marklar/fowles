@@ -20,17 +20,41 @@
           (recur))))))
 
 (defn- get-bodies-channel
-  [uris-ch]
-  (let [sleep-ch     (chan)
-        responses-ch (requester/get-responses uris-ch sleep-ch)
-        bodies-ch    (gatherer/gather responses-ch uris-ch sleep-ch)]
+  [uris-ch failed-file batch-size frequency-ms sleep-ms]
+  (let [sleep-ch (chan)
+        responses-ch
+            (requester/get-responses uris-ch sleep-ch
+                                     batch-size
+                                     frequency-ms
+                                     sleep-ms)
+        bodies-ch (gatherer/gather responses-ch uris-ch
+                                   sleep-ch failed-file)]
     bodies-ch))
 
+;;
+;; TODO: Change this behavior to match doc string.
+;; We want the plumbing to PROVIDE the uris-ch,
+;; not to require it from outside.
+;;
 (defn report
-  ":: chan -> ()
-   Given channel of responses, 'output' them in own Thread."
-  [uris-ch output-fn]
-  (println "in plumbing/report")
-  (let [bodies-ch (get-bodies-channel uris-ch)]
+  ":: (int, int, int, str, fn) -> ()
+   Given:
+     + (for now, an input channel of URIs)
+     + fetching behavior cfg (batch size, pause times)
+     + file name for reporting failed fetches
+     + function to call w/ body of each successful response
+   Output:
+     + failed URIs to `failed-file`
+     + logging to stdout
+   Return:
+     + `uris-ch` for inputing URIs"
+  [uris-ch batch-size frequency-ms sleep-ms
+   failed-file output-fn]
+  (let [;; uris-ch (chan 1000)
+        bodies-ch (get-bodies-channel uris-ch failed-file
+                                      batch-size
+                                      frequency-ms
+                                      sleep-ms)]
     (.start (Thread. #(dequeue bodies-ch output-fn)))))
+  ;; uris-ch))
 

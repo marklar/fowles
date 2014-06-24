@@ -5,20 +5,44 @@
 
 (def CFG_FILE_NAME ".config.json")
 
-(defn- load-cfg
+(defn load-cfg
   "If cfg file exists, return cfg data.  Else, throw exception."
-  []
-  (if (.exists (as-file CFG_FILE_NAME))
-    (let [json-str (slurp CFG_FILE_NAME)]
-      (json/read-str json-str))
-    (throw (Exception. "No configuration file found."))))
+  [file-name]
+  (if (.exists (as-file file-name))
+    (let [json-str (slurp file-name)
+          hmap     (json/read-str json-str)]
+      (clojure.walk/keywordize-keys hmap))
+    (throw (Exception. (str "Configuration file '"
+                            file-name
+                            "' NOT found.")))))
 
 (def cfg)
-(defn- get-cfg []
-  (defonce cfg (load-cfg))
+(defn get-cfg []
+  (defonce cfg (load-cfg CFG_FILE_NAME))
   cfg)
+
+(defn cfg-get [k]
+  (get (get-cfg) k))
 
 ;;----------------------
 
-(defn cfg-get [k]
-  (get (get-cfg) (name k)))
+(defn- non-nil-or-throw
+  [name v]
+  (if-not (nil? v)
+    v
+    (throw (Exception. (str "Configuration error: `"
+                            name
+                            "` cannot be null.")))))
+
+;;----------------------
+
+(defn get-optional-field
+  [config keywords]
+  (get-in config keywords))
+
+(defn get-required-field
+  [config keywords]
+  ;; (clojure.pprint/pprint config)
+  (non-nil-or-throw
+   (clojure.string/join "." (map name keywords))
+   (get-in config keywords)))

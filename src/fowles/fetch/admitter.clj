@@ -5,19 +5,23 @@
    + Output: Put for requester."
   ;; [com.keminglabs.zmq-async.core :refer [register-socket!]]
   (:refer-clojure :exclude [partition])
-  (:require [fowles.admitter :as admitter]
+  (:require [fowles
+             [admitter :as admitter]
+             [util :as util]]
             [clojure.string :as str]
-            [clojure.core.async :refer [partition] :as async]))
+            [clojure.core.async :refer [partition >!! close!] :as async]))
 
 (def BUFFER_SIZE 1000)
 
-;; FIXME: Don't enqueue all of them at once.  `split` is NOT lazy!
 (defn- enq-video-ids-from-file
-  ":: chan -> ()"
+  ":: (str, chan) -> ()"
   [in-file to-ch]
-  (let [lines     (str/split-lines (slurp in-file))
-        video-ids (map #(first (str/split % #"\t")) lines)]
-    (admitter/enq to-ch video-ids)))
+  (util/line-by-line in-file
+                     (fn [ln]
+                       ;; The line has both a video-id and a channel-id.
+                       (let [[id _] (str/split ln #"\t")]
+                         (>!! to-ch id))))
+  (close! to-ch))
 
 ;;--------------------------
 

@@ -4,20 +4,23 @@
    + Data:   video-ids, queries.
    + Output: Put for requester."
   ;; [com.keminglabs.zmq-async.core :refer [register-socket!]]
-  (:require [fowles.admitter :as admitter]
+  (:require [fowles
+             [admitter :as admitter]
+             [util :as util]]
             [clojure.string :as str]
-            [clj-time.core :as t]))
+            [clj-time.core :as t]
+            [clojure.core.async :refer [>!! close!]]))
 
 ;; https://developers.google.com/youtube/v3/guides/searching_by_topic
-(defn- enq-topics-from-file
-  ":: (DateTime, DateTime, chan) -> ()"
+(defn- enq-topic-ids-from-file
+  ":: (str, DateTime, DateTime, chan) -> ()"
   [in-file start-date end-date to-ch]
-  ;; FIXME: The problem: NOT lazy!
-  (let [topic-ids (str/split-lines (slurp in-file))]
-    (admitter/enq to-ch (map (fn [topic-id] {:topic-id topic-id
-                                             :start-date start-date
-                                             :end-date end-date})
-                             topic-ids))))
+  (util/line-by-line in-file
+                     (fn [topic-id]
+                       (>!! to-ch {:topic-id topic-id
+                                   :start-date start-date
+                                   :end-date end-date})))
+  (close! to-ch))
 
 ;;----------------------
 
@@ -26,5 +29,5 @@
   [in-file start-date end-date]
   ;; (let [start-date (t/date-time 2014 1 1)
   ;;       end-date   (t/date-time 2014 4 3)]
-  (admitter/admit (partial enq-topics-from-file in-file
+  (admitter/admit (partial enq-topic-ids-from-file in-file
                            start-date end-date)))

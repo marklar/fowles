@@ -32,3 +32,9 @@
   [strs file-name]
   (with-open [wrtr (io/writer file-name :append true)]
     (doseq [s strs] (.write wrtr (str s "\n")))))
+
+(defn line-by-line
+  [file-name line-fn]
+  (with-open [rdr (io/reader file-name)]
+    (doseq [line (line-seq rdr)]
+      (line-fn line))))

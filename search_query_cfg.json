@@ -20,8 +20,8 @@
     },
 
     "files": {
-	"input":  "io/topic/topic_ids.txt",
-	"output": "io/topic/video_and_channel_ids.txt",
-        "failed": "io/topic/failed.txt"
+	"input":  "io/query/queries.txt",
+	"output": "io/query/video_and_channel_ids.txt",
+        "failed": "io/query/failed.txt"
     }
 }

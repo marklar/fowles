@@ -11,7 +11,7 @@
 
 (def BUFFER_SIZE 1000)
 
-;; FIXME: Don't enqueue all of them at once.
+;; FIXME: Don't enqueue all of them at once.  `split` is NOT lazy!
 (defn- enq-video-ids-from-file
   ":: chan -> ()"
   [in-file to-ch]

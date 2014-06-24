@@ -16,7 +16,9 @@
 
 (defn- fix-arg
   [[k v]]
-  (str k "=" (fix-value v)))
+  (if (nil? v)
+    nil
+    (str k "=" (fix-value v))))
   
 (defn- hmap->query-string
   ":: {keyword, str-able} -> str"
@@ -24,6 +26,7 @@
   (->> hmap
        clojure.walk/stringify-keys
        (map fix-arg)
+       (remove nil?)
        (str/join "&")))
 
 ;;---------------------

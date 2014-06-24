@@ -1,0 +1,27 @@
+{
+    "uris": {
+        "api_key": null,
+        "args": {
+	    "date_range": {
+		"start" : "2000-06-23T00:00:00Z",
+		"end"   : "2014-06-24T00:00:00Z"
+	    },
+            "part": ["id", "snippet"],
+            "fields": null
+	}
+    },
+
+    "concurrency": {
+	"batches": {
+	    "num_requests": 5,
+	    "frequency_ms": 250
+	},
+	"sleep_ms": 1000
+    },
+
+    "files": {
+	"input":  "io/topic/topic_ids.txt",
+	"output": "io/topic/video_and_channel_ids.txt",
+        "failed": "io/topic/failed.txt"
+    }
+}

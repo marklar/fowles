@@ -1,31 +1,40 @@
-(ns fowles.search.topic.searcher
+(ns fowles.search.topic.core
   "Do YouTube Data API 'search'.
    Only for:
      + type 'video'
      + of a particular 'topicId'
-     + publishedBefore a certain date.
+     + 'publishedAfter' a certain date and 'publishedBefore' another
    Get the channelId for each video and save it."
   (:require [clojure.core.async :refer [chan]]
             [fowles
-             [cfg :as cfg]
-             [util :as util]
              [plumbing :as plumbing]]
+            [fowles.search
+             [reporter :as reporter]]
             [fowles.search.topic
+             [cfg :as cfg]
              [admitter :as admitter]
-             [uris :as uris]
-             [reporter :as reporter]]))
+             [uris :as uris]]))
 
-(defn- mk-uris-ch
-  [api-key]
-  (let [topics-ch (admitter/admit-topics)
-        uris-ch (uris/topic-search-uris api-key topics-ch)]
+(defn- mk-uris-ch []
+  (let [topics-ch (admitter/admit-topics-from-file (cfg/in-file)
+                                                   (cfg/start-date)
+                                                   (cfg/end-date))
+        uris-ch (uris/topic-search-uris (cfg/api-key)
+                                        (cfg/part)
+                                        (cfg/fields)
+                                        topics-ch)]
     uris-ch))
 
-(defn- search
-  [api-key]
-  (plumbing/report (mk-uris-ch api-key)
-                   reporter/output-channel-ids))
+(defn- search []
+  (plumbing/report (mk-uris-ch)
+                   (cfg/batch-size)
+                   (cfg/frequency-ms)
+                   (cfg/sleep-ms)
+                   (cfg/failed-file)
+                   (partial reporter/output-video-and-channel-ids
+                            (cfg/out-file))))
 
 (defn -main []
-  (search (cfg/cfg-get :api-key))
+  (cfg/validate)
+  (search)
   (while true))

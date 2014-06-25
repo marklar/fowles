@@ -44,14 +44,24 @@
         [first-id rest] (str/split after #",")]
     first-id))
 
+(defn- replace-api-key
+  [uri]
+  uri)
+
 (defn- handle-bad-response
   ":: (hmap, chan, str) -> keyword"
   [{:keys [error status opts]} uris-ch failed-file]
   (let [uri (url-decode (:url opts))]
+
+    ;; (if (= 403 status)
+    ;;
+    ;; If the status code is 403,
+    ;; that means we've reached our daily usage limits.
+    ;; Switch to a new API key.
+    ;;
+
     (if (retriable? error status)
       ;; re-queue the same URI
-      ;; TODO: add a "&retryNum=<num>" to end of URL.
-      ;; That way we can track which ones get tried (and how often).
       (do
         (println "** requeueing:" uri)
         (println "   error :" error)

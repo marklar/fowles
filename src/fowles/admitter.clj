@@ -19,10 +19,6 @@
 ;; for "next page" urls.
 ;; (close! to-ch))
 
-(defn- recv-str
-  [sock]
-  (String. (zmq/receive sock)))
-
 (defn- mk-puller
   [ctx addr]
   (doto (zmq/socket ctx :pull)
@@ -35,7 +31,7 @@
     (with-open [puller (mk-puller ctx addr)]
       (println "Ready to receive input on addr:" addr)
       (loop []
-        (let [msg (recv-str puller)]
+        (let [msg (zmq/receive-str puller)]
           (println "receiving:" msg)
           (go (>! to-ch msg)))
         (recur)))))

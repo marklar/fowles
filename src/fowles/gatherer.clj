@@ -53,7 +53,7 @@
       ;; TODO: add a "&retryNum=<num>" to end of URL.
       ;; That way we can track which ones get tried (and how often).
       (do
-        (println "** requeueing:" uri) ;; (get-first-id-from-fetch-uri uri))
+        (println "** requeueing:" uri)
         (println "   error :" error)
         (println "   status:" status)
         (println "")
@@ -64,7 +64,7 @@
         ;; write failed uri to file
         (spit failed-file (str uri "\n") :append true)
         ;; stdout
-        (println "** failed:" uri) ;; (get-first-id-from-fetch-uri uri))
+        (println "** failed:" uri)
         (println "   error :" error)
         (println "   status:" status)
         (println "")
@@ -75,7 +75,7 @@
   [{:keys [body opts]} uris-ch bodies-ch]
   (let [resp-body (json/read-str body)
         uri (url-decode (:url opts))]
-    (println "ok:" uri) ;; (get-first-id-from-fetch-uri uri))
+    (println "ok")
     ;; use it
     (>!! bodies-ch resp-body)
     ;; queue up nextPage, if any

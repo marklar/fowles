@@ -1,6 +1,6 @@
 (ns fowles.fetch.core
   "Fetch videos by id (or list of ids)."
-  (:require [clojure.core.async :refer [chan]]
+  (:require [clojure.core.async :refer [chan alts!!]]
             [fowles.plumbing :as plumbing]
             [fowles.fetch
              [cfg :as cfg]
@@ -54,17 +54,18 @@
     uris-ch))
 
 (defn- fetch []
+  ;; Start plumbing Thread.
   (plumbing/report (mk-uris-ch)
                    (cfg/batch-size)
                    (cfg/frequency-ms)
                    (cfg/sleep-ms)
                    (cfg/failed-file)
                    (partial reporter/output-videos
-                            (cfg/out-file))))
+                            (cfg/out-file)))
+  (while true))
 
 ;;---------------
 
 (defn -main []
   (cfg/validate)
-  (fetch)
-  (while true))
+  (fetch))

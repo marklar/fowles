@@ -20,6 +20,7 @@
           (recur))))))
 
 (defn- get-bodies-channel
+  ":: (chan, str, int, int, int) -> chan"
   [uris-ch failed-file batch-size frequency-ms sleep-ms]
   (let [sleep-ch (chan)
         responses-ch
@@ -37,7 +38,7 @@
 ;; not to require it from outside.
 ;;
 (defn report
-  ":: (int, int, int, str, fn) -> ()
+  ":: (chan, chan, int, int, int, str, fn) -> ()
    Given:
      + (for now, an input channel of URIs)
      + fetching behavior cfg (batch size, pause times)
@@ -48,10 +49,12 @@
      + logging to stdout
    Return:
      + `uris-ch` for inputing URIs"
-  [uris-ch batch-size frequency-ms sleep-ms
+  [uris-ch
+   batch-size frequency-ms sleep-ms
    failed-file output-fn]
   (let [;; uris-ch (chan 1000)
-        bodies-ch (get-bodies-channel uris-ch failed-file
+        bodies-ch (get-bodies-channel uris-ch
+                                      failed-file
                                       batch-size
                                       frequency-ms
                                       sleep-ms)]

@@ -9,6 +9,9 @@
   (defonce file-cfg (cfg/load-cfg FILE_NAME))
   file-cfg)
 
+(defn- gof [& keywords]
+  (cfg/get-optional-field (get-cfg) keywords))
+
 (defn- grf [& keywords]
   (cfg/get-required-field (get-cfg) keywords))
 
@@ -35,11 +38,17 @@
 (defn sleep-ms []
   (grf :concurrency :sleep_ms))
 
+(defn in-port []
+  (grf :ports :input))
+
+(defn out-port []
+  (grf :ports :output))
+
 (defn in-file []
-  (grf :files :input))
+  (gof :files :input))
 
 (defn out-file []
-  (grf :files :output))
+  (gof :files :output))
 
 (defn failed-file []
   (grf :files :failed))
@@ -57,8 +66,10 @@
              batch-size
              frequency-ms
              sleep-ms
-             in-file
-             out-file
+             ;; in-file
+             ;; out-file
+             in-port
+             out-port
              failed-file
              ;; log-file
              ]]

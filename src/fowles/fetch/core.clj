@@ -1,7 +1,8 @@
 (ns fowles.fetch.core
   "Fetch videos by id (or list of ids)."
   (:require [clojure.core.async :refer [chan alts!!]]
-            [fowles.plumbing :as plumbing]
+            [fowles
+             [plumbing :as plumbing]]
             [fowles.fetch
              [cfg :as cfg]
              [admitter :as admitter]
@@ -35,17 +36,13 @@
 ;;   Input:  push URIs onto socket.
 ;;   Output: take response body JSON off socket.
 ;;   
-;;
-;; CMD-LINE FETCHER
-;;   + cmd line: filename of videoIds
-;;   + stdout:   json response bodies
-;;   - Since we know how many videoIds there are,
-;;     we can also know when we're done and exit.
-;;
 
 (defn- mk-uris-ch []
-  (let [ids-ch (admitter/admit-video-ids-from-file
-                (cfg/in-file)
+  ;; (let [ids-ch (admitter/video-ids-from-file
+  ;;               (cfg/in-file)
+  ;;               (cfg/num-per-request))
+  (let [ids-ch (admitter/video-ids-from-puller
+                (cfg/in-port)
                 (cfg/num-per-request))
         uris-ch (uris/video-uris ids-ch
                                  (cfg/api-key)

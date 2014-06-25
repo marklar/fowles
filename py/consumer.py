@@ -27,11 +27,12 @@ def get_puller():
     return zmq_socket
 
 def receive():
-    return get_puller().recv_json()
+    # return get_puller().recv_json()
+    return get_puller().recv()
 
 # synchronous pulling
 while True:
-# for x in xrange(1000):
     msg = receive()
-    print 'receiving val: %d' % (msg['num'])
+    # print 'receiving val: %d' % (msg['num'])
+    print 'receiving val: %s' % (msg)
     

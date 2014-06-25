@@ -22,6 +22,11 @@
 	"sleep_ms": 1000
     },
 
+    "ports": {
+	"input":  5557,
+	"output": 5558
+    },
+
     "files": {
 	"input":  "io/video_and_channel_ids.txt",
 	"output": "io/fetch/video_json.txt",

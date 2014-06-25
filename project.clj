@@ -7,14 +7,18 @@
                  [org.clojure/data.json "0.2.5"]
                  [com.cemerick/url "0.1.1"]
                  [clj-time "0.7.0"]
+
+                 [org.zeromq/cljzmq "0.1.4"]
                  [http-kit "2.1.16"]]
-                 ;; [org.clojure/core.match "0.2.1"]
                  ;; [org.clojure/tools.cli "0.3.1"]]
-                 ;; [org.zeromq/cljzmq "0.1.5-SNAPSHOT"]]
-                 ;; [com.keminglabs/zmq-async "0.1.0"]]
 
   :main fowles.fetch.core
   :aot [fowles.fetch.core]
+
+  ;; https://github.com/zeromq/jzmq/issues/29
+  ;; https://github.com/technomancy/leiningen/blob/master/sample.project.clj#L280
+  ;; ZeroMQ
+  :jvm-opts ["-Djava.library.path=/usr/local/lib"]
 
   :profiles {:dev {:dependencies [[midje "1.6.0"]]}})
 

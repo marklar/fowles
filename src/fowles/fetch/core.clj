@@ -37,13 +37,32 @@
 ;;   Output: take response body JSON off socket.
 ;;   
 
+(defn- mk-file-ids-ch []
+  (admitter/video-ids-from-file
+   (cfg/in-file)
+   (cfg/num-per-request)))
+
+(defn- mk-puller-ids-ch []
+  (admitter/video-ids-from-puller
+   (cfg/in-port)
+   (cfg/num-per-request)))
+
+(defn- mk-ids-ch []
+  (if (nil? (cfg/in-port))
+    (mk-file-ids-ch)
+    (mk-puller-ids-ch)))
+
+;;------------------
+
+(defn- get-output-fn []
+  (if (nil? (cfg/out-port))
+    (reporter/mk-videos-writer (cfg/out-file))
+    (reporter/mk-videos-pusher (cfg/out-port))))
+
+;;------------------
+
 (defn- mk-uris-ch []
-  ;; (let [ids-ch (admitter/video-ids-from-file
-  ;;               (cfg/in-file)
-  ;;               (cfg/num-per-request))
-  (let [ids-ch (admitter/video-ids-from-puller
-                (cfg/in-port)
-                (cfg/num-per-request))
+  (let [ids-ch (mk-ids-ch)
         uris-ch (uris/video-uris ids-ch
                                  (cfg/api-key)
                                  (cfg/part)
@@ -57,8 +76,7 @@
                    (cfg/frequency-ms)
                    (cfg/sleep-ms)
                    (cfg/failed-file)
-                   (partial reporter/output-videos
-                            (cfg/out-file)))
+                   (get-output-fn))
   (while true))
 
 ;;---------------

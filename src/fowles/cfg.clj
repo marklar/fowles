@@ -26,15 +26,13 @@
 
 ;;----------------------
 
-(defn- non-nil-or-throw
+(defn non-nil-or-throw
   [name v]
   (if-not (nil? v)
     v
     (throw (Exception. (str "Configuration error: `"
                             name
                             "` cannot be null.")))))
-
-;;----------------------
 
 (defn get-optional-field
   [config keywords]

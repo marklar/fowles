@@ -18,7 +18,8 @@ def get_puller():
     return zmq_socket
 
 def receive():
-    return get_puller().recv_json()
+    # return get_puller().recv_json()
+    return get_puller().recv()
 
 while True:
     msg = receive()

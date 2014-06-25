@@ -38,17 +38,21 @@
 (defn sleep-ms []
   (grf :concurrency :sleep_ms))
 
+;;--------------
+
 (defn in-port []
-  (grf :ports :input))
+  (gof :ports :input))
 
 (defn out-port []
-  (grf :ports :output))
+  (gof :ports :output))
 
 (defn in-file []
   (gof :files :input))
 
 (defn out-file []
   (gof :files :output))
+
+;;---------------
 
 (defn failed-file []
   (grf :files :failed))
@@ -66,11 +70,11 @@
              batch-size
              frequency-ms
              sleep-ms
-             ;; in-file
-             ;; out-file
-             in-port
-             out-port
              failed-file
              ;; log-file
              ]]
-    (f)))
+    (f)
+    (cfg/non-nil-or-throw "file.input or port.input"
+                          (or (in-file) (in-port)))
+    (cfg/non-nil-or-throw "file.output or port.output"
+                          (or (out-file) (out-port)))))

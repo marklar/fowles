@@ -36,7 +36,7 @@
 ;;--------------------------
 
 (defn video-ids-from-puller
-  ""
+  ":: (int, int) -> chan"
   [port num-per-request]
   (let [single-id-ch (admitter/from-puller port)]
     (async/partition num-per-request

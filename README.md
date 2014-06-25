@@ -99,10 +99,10 @@ of all the different types of configuration files.
     {
         "uris": {
             "api_key": "some-google-api-key-here",
-	    "num_ids_per_request": 50,
+            "num_ids_per_request": 50,
             "args": {
                 "part": [
-		    "contentDetails",
+                    "contentDetails",
                     "snippet",
                     "statistics",
                     "status",
@@ -114,20 +114,20 @@ of all the different types of configuration files.
 
         "concurrency": {
             "batches": {
-	        "num_requests": 5,
+                "num_requests": 5,
                 "frequency_ms": 250
-	    },
-	    "sleep_ms": 1000
+            },
+            "sleep_ms": 1000
         },
 
         "ports": {
-	    "input":  5557,
-	    "output": 5558
+            "input":  5557,
+            "output": 5558
         },
 
         "files": {
-	    "input":  "io/video_and_channel_ids.txt",
-	    "output": "io/fetch/video_json.txt",
+            "input":  "io/video_and_channel_ids.txt",
+            "output": "io/fetch/video_json.txt",
             "failed": "io/fetch/failed.txt"
         }
     }

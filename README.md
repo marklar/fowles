@@ -153,7 +153,7 @@ To fetch by videoIds, run this command:
 
     > lein run -m fowles.fetch.core
 
-It uses the configuration file: `fetch_cfg.json`.
+It uses the configuration file: `config/fetch_cfg.json`.
 
 If you're using files for providing input and collecting output,
 that's all you need to run.  However, if you're using clients for
@@ -177,7 +177,7 @@ To search by queries, run this command:
 (At the time of this writing, it doesn't work with producers and
 consumers, only files.)
 
-It uses the configuration file: `search_query_cfg.json`.
+It uses the configuration file: `config/search_query_cfg.json`.
 
 ### Search by Topic
 
@@ -188,4 +188,4 @@ To search by topic, run this command:
 (At the time of this writing, it doesn't work with producers and
 consumers, only files.)
 
-It uses the configuration file: `search_topic_cfg.json`.
+It uses the configuration file: `config/search_topic_cfg.json`.

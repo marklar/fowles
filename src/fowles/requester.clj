@@ -33,6 +33,7 @@
        from-ch  ([uri] (if (nil? uri)
                          (recur i)
                          (do
+                           (println "getting URI:" uri)
                            (async-get uri to-ch)
                            (recur (inc i)))))
        

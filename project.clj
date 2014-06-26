@@ -7,10 +7,8 @@
                  [org.clojure/data.json "0.2.5"]
                  [com.cemerick/url "0.1.1"]
                  [clj-time "0.7.0"]
-
                  [org.zeromq/cljzmq "0.1.4"]
                  [http-kit "2.1.16"]]
-                 ;; [org.clojure/tools.cli "0.3.1"]]
 
   :main fowles.fetch.core
   :aot [fowles.fetch.core]

@@ -23,6 +23,15 @@
 
 ;;-------------------------------  
 
+(defn update-request-arg
+  [request name val]
+  (let [qt (:query-type request)
+        args (:args request)]
+    {:query-type qt
+     :args (assoc args name val)}))
+
+;;-------------------------------  
+
 ;; Why doesn't this work?
 (defn prep-shutdown []
   (let [start-time (t/now)]

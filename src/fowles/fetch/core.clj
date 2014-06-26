@@ -1,7 +1,6 @@
 (ns fowles.fetch.core
   "Fetch videos by id (or list of ids)."
-  (:require [clojure.core.async :refer [chan alts!!]]
-            [fowles
+  (:require [fowles
              [plumbing :as plumbing]]
             [fowles.fetch
              [cfg :as cfg]

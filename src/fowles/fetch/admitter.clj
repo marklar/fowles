@@ -5,12 +5,8 @@
    + Output: Put for requester."
   (:refer-clojure :exclude [partition])
   (:require [fowles
-             [admitter :as admitter]
-             [util :as util]]
-            [clojure.string :as str]
-            [clojure.core.async
-             :refer [partition >!! go >!]
-             :as async]))
+             [admitter :as admitter]]
+            [clojure.core.async :refer [partition] :as async]))
 
 (def BUFFER_SIZE 1000)
 

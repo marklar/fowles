@@ -1,28 +1,24 @@
 import time
 import zmq
 
-input_file = "io/video_and_channel_ids.txt"
-host = "127.0.0.1"
-port = 5557
+# cfg
+INPUT_FILE = "io/video_and_channel_ids.txt"
+PORT = 5557
 
+# globals
 context = None
-zmq_socket = None
+pusher = None
 
-def mk_addr(h, p):
-    return "tcp://%s:%d" % (h, p)
-
-def set_host_and_port(h, p):
-    global host, port
-    host = h
-    port = p
+def mk_addr(p):
+    return "tcp://*:%d" % (p)
 
 def get_pusher():
-    global context, zmq_socket
-    if zmq_socket is None:
+    global context, pusher
+    if pusher is None:
         context = zmq.Context()
-        zmq_socket = context.socket(zmq.PUSH)
-        zmq_socket.connect( mk_addr(host, port) )
-    return zmq_socket
+        pusher = context.socket(zmq.PUSH)
+        pusher.bind( mk_addr(PORT) )
+    return pusher
 
 def submit(msg):
     get_pusher().send(msg)
@@ -37,4 +33,4 @@ def push_video_ids(fname):
         print "sending: %s" % (vid_id)
         submit(vid_id)
 
-push_video_ids(input_file)
+push_video_ids(INPUT_FILE)

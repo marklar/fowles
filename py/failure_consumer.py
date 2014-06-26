@@ -1,7 +1,7 @@
 import zmq
 
 # cfg
-PORT = 5558
+PORT = 5559
 
 # globals
 context = None
@@ -19,7 +19,6 @@ def get_puller():
     return puller
 
 def receive():
-    # return get_puller().recv_json()
     return get_puller().recv()
 
 while True:

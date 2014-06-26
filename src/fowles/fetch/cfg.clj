@@ -9,9 +9,6 @@
   (defonce file-cfg (cfg/load-cfg FILE_NAME))
   file-cfg)
 
-(defn- gof [& keywords]
-  (cfg/get-optional-field (get-cfg) keywords))
-
 (defn- grf [& keywords]
   (cfg/get-required-field (get-cfg) keywords))
 
@@ -40,22 +37,22 @@
 
 ;;--------------
 
+(defn in-host []
+  (grf :sockets :input :host))
 (defn in-port []
-  (gof :ports :input))
+  (grf :sockets :input :port))
 
+(defn out-host []
+  (grf :sockets :output :host))
 (defn out-port []
-  (gof :ports :output))
+  (grf :sockets :output :port))
 
-(defn in-file []
-  (gof :files :input))
-
-(defn out-file []
-  (gof :files :output))
+(defn failed-host []
+  (grf :sockets :failed :host))
+(defn failed-port []
+  (grf :sockets :failed :port))
 
 ;;---------------
-
-(defn failed-file []
-  (grf :files :failed))
 
 ;; (defn log-file []
 ;;   (grf :files :log))
@@ -70,11 +67,9 @@
              batch-size
              frequency-ms
              sleep-ms
-             failed-file
+             in-host in-port
+             out-host out-port
+             failed-host failed-port
              ;; log-file
              ]]
-    (f)
-    (cfg/non-nil-or-throw "file.input or port.input"
-                          (or (in-file) (in-port)))
-    (cfg/non-nil-or-throw "file.output or port.output"
-                          (or (out-file) (out-port)))))
+    (f)))

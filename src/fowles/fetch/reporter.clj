@@ -1,8 +1,8 @@
 (ns fowles.fetch.reporter
   "Thread dedicated to outputing responses."
   (:require [fowles 
-             [util :as util]
-             [reporter :as reporter]]
+             [util :as util]]
+            [zeromq.zmq :as zmq]
             [clojure.data.json :as json]))
 
 (defn- get-item-jsons
@@ -13,20 +13,10 @@
 
 ;;-------------------------------
 
-;; TODO:
-;; Enclose over an io/writer,
-;; so you don't need to keep re-creating it.
-(defn mk-videos-writer
-  ":: str -> (str -> ())"
-  [out-file]
-  (fn [resp-body]
-    (let [item-json-strs (get-item-jsons resp-body)]
-      (util/append-strs-to-file item-json-strs out-file))))
-    
 (defn mk-videos-pusher
   ":: int -> (str -> ())"
-  [port]
-  (let [pusher (reporter/mk-pusher port)]
+  [host port]
+  (let [pusher (util/mk-pusher host port)]
     (fn [resp-body]
-      (let [item-json-strs (get-item-jsons resp-body)]
-        (reporter/send-seq pusher item-json-strs)))))
+        (doseq [js (get-item-jsons resp-body)]
+          (zmq/send-str pusher js)))))

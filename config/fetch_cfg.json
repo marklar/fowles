@@ -1,5 +1,20 @@
 {
-    "uris": {
+    "servers": {
+	"input": {
+	    "host": "127.0.0.1",
+	    "port": 5557
+	},
+	"output": {
+	    "host": "127.0.0.1",
+	    "port": 5558
+	},
+	"failed": {
+	    "host": "127.0.0.1",
+	    "port": 5559
+	}
+    },
+
+    "requests": {
 	"num_ids_per_request": 50,
         "args": {
             "part": [
@@ -19,20 +34,5 @@
 	    "frequency_ms": 250
 	},
 	"sleep_ms": 1000
-    },
-
-    "sockets": {
-	"input": {
-	    "host": "127.0.0.1",
-	    "port": 5557
-	},
-	"output": {
-	    "host": "127.0.0.1",
-	    "port": 5558
-	},
-	"failed": {
-	    "host": "127.0.0.1",
-	    "port": 5559
-	}
     }
 }

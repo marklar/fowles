@@ -14,14 +14,33 @@
 
 ;;--------------------------
 
+(defn in-host []
+  (grf :servers :input :host))
+(defn in-port []
+  (grf :servers :input :port))
+
+(defn out-host []
+  (grf :servers :output :host))
+(defn out-port []
+  (grf :servers :output :port))
+
+(defn failed-host []
+  (grf :servers :failed :host))
+(defn failed-port []
+  (grf :servers :failed :port))
+
+;;---------------
+
 (defn num-per-request []
-  (grf :uris :num_ids_per_request))
+  (grf :requests :num_ids_per_request))
 
 (defn part []
-  (grf :uris :args :part))
+  (grf :requests :args :part))
 
 (defn fields []
-  (grf :uris :args :fields))
+  (grf :requests :args :fields))
+
+;;--------------
 
 (defn batch-size []
   (grf :concurrency :batches :num_requests))
@@ -33,26 +52,6 @@
   (grf :concurrency :sleep_ms))
 
 ;;--------------
-
-(defn in-host []
-  (grf :sockets :input :host))
-(defn in-port []
-  (grf :sockets :input :port))
-
-(defn out-host []
-  (grf :sockets :output :host))
-(defn out-port []
-  (grf :sockets :output :port))
-
-(defn failed-host []
-  (grf :sockets :failed :host))
-(defn failed-port []
-  (grf :sockets :failed :port))
-
-;;---------------
-
-;; (defn log-file []
-;;   (grf :files :log))
 
 (defn validate []
   "If valid, return nil.

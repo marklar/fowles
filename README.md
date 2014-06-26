@@ -1,6 +1,6 @@
 # Fowles
 
-Distributed collection system.
+Worker process for collecting web data.
 
 ## What it Does
 
@@ -14,7 +14,7 @@ The core infrastructure works like this:
 
 It backs off, and it retries as necessary.
 
-For search results, it grabs all subsequent pages (using
+For YouTube search results, it grabs all subsequent pages (using
 nextPageToken).
 
 
@@ -39,12 +39,15 @@ responses for you.
 
 ### Input and Output
 
-You currently have two choices for input and output.  You may use:
+To supply input to Fowles and receive its output, you must provide
+software "servers".  You need three:
 
-* Flat files, whose paths you specify in a configuration file -OR-
-* Software clients.  One to queue up inputs, and another to receive outputs.
-  * e.g. producer: py/video_id_producer.py (which simply gets its IDs from a file)
-  * e.g. consumer: py/video_consumer.py (which simply outputs the responses to stdout)
+1. a "ventilator", to queue up inputs
+  * e.g. py/video_id_producer.py (which simply gets its IDs from a file)
+2. a results "sink", to accept outputs from successful requests
+  * e.g. py/video_consumer.py (which simply outputs the responses to stdout)
+3. a failures "sink": to receive notifications about failed requests
+  * e.g. py/failure_consumer.py (which simply outputs the responses to stdout)
 
 
 ## Prerequisites
@@ -74,9 +77,12 @@ how we'll deploy it to remote servers when the need arises.)
 
 ## Running Fowles
 
-Fowles runs as a service.  Whether it takes input from flat files or
-from a producer client, it doesn't have any notion of being done with
-its work.  When you think it's done, Ctrl-C it.
+Fowles is a software "client".  You may run one instance of Fowles or
+multiple.  Each must know where (i.e. which host and port) to find
+your "server" processes mentioned above.
+
+Fowles has no notion of being "done" with its queue of work.  It just
+waits for more.  When you think it's done, Ctrl-C it.
 
 At the moment, there are three different versions of Fowles, depending
 on whether you want to fetch by videoIds, or search by query, or
@@ -89,16 +95,49 @@ below.)
 
 ### Configuration
 
-The configuration file looks something like below.
+Fowles requires two different configuration files:
 
-This one is specifically for fetching videos by videoId, so it has a
-pair of configuration settings specific to that (such as
-`uris.num_ids_per_request`).  See the `config` directory for examples
-of all the different types of configuration files.
+* `config/secret.json` - which currently contains only your API keys
+* `config/fetch_cfg.json` - everything else Fowles needs to know
+
+`secret.json` is meant to contain sensitve data.  You don't include
+this file in source control.  It looks like this:
 
     {
-        "uris": {
-            "api_key": "some-google-api-key-here",
+        "api_keys": [
+            "some-google-api-key-here",
+            "and-another-api-key-here"
+        ]
+    }
+
+
+`fetch_cfg.json` contains everything else.  A 'default' version can be
+checked into source control.
+
+This configuration file looks something like below.  This one is
+specifically for fetching videos by videoId, so it has one setting
+specific to that purpose (i.e. `requests.num_ids_per_request`).  See
+the `config` directory for examples of all the different types of
+configuration files.
+
+
+    {
+        "servers": {
+            "input": {
+                "host": "127.0.0.1",
+                "port": 5557
+            },
+            "output": {
+                "host": "127.0.0.1",
+                "port": 5558
+            },
+            "failed": {
+                "host": "127.0.0.1",
+                "port": 5559
+            }
+        },
+
+        "requests": {
             "num_ids_per_request": 50,
             "args": {
                 "part": [
@@ -118,30 +157,14 @@ of all the different types of configuration files.
                 "frequency_ms": 250
             },
             "sleep_ms": 1000
-        },
-
-        "ports": {
-            "input":  5557,
-            "output": 5558
-        },
-
-        "files": {
-            "input":  "io/video_and_channel_ids.txt",
-            "output": "io/fetch/video_json.txt",
-            "failed": "io/fetch/failed.txt"
         }
     }
 
-The `ports` and `files` are for specifying input and output.  Ports
-take precedence.  If you provide `ports.input`, Fowles will look there
-for its input, not `files.input`.  Likewise for `ports.output` and
-`files.output`.  For both input and output, you must supply at least
-one.
 
-Currently, Fowles accepts only a single API key.  Once it's exhausted,
-Fowles simply "fails" on those requests, logging them to
-`files.failed`.  (Eventually, it will take an array of API keys, using
-each in turn.)
+The `servers` info describes where your "ventilator" and "sink"
+programs can be found.
+
+The `requests` settings determine what queries you make of the YouTube API.
 
 The `concurrency` settings are for controlling how "nice" Fowles plays
 with the YouTube service.  The above settings seem like good defaults.
@@ -158,15 +181,25 @@ It uses the configuration file: `config/fetch_cfg.json`.
 If you're using files for providing input and collecting output,
 that's all you need to run.  However, if you're using clients for
 input and output, you need to start those as well.  For example, in
-one terminal window:
-   
-    > python py/video_id_producer.py
+three different terminal windows, run the following:
 
-, and in a different terminal window:
+The ventilator:
 
-    > python py/video_consumer.py
+    > python py/video_id_ventilator.py
+
+The results sink:
+
+    > python py/video_sink.py
+
+The failures sink:
+
+    > python py/failure_sink.py
 
 You can start the processes in any order.  (It's like magic!)
+
+
+# IGNORE EVERYTHING AFTER THIS...
+
 
 ### Search by Query
 

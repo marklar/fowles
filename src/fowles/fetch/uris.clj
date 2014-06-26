@@ -2,6 +2,8 @@
   (:require [fowles.uris :as uris]
             [clojure.core.async :refer [chan pipe map<]]))
 
+;; TODO: rename to 'requests'?
+
 ;;
 ;; https://developers.google.com/youtube/v3/getting-started#part
 ;;
@@ -34,26 +36,20 @@
    ")"))
 
 ;;
-;; TODO: Make this more efficient.
-;; Currently it's reconstructing the entire URL
-;; with every set of video-ids.
-;;
 ;; https://developers.google.com/youtube/v3/docs/videos/list
-(defn- mk-video-uri
-  ":: (str, [str]) -> str"
-  [api-key part fields video-ids]
-  (let [args {:key api-key
-              :id video-ids
-              :part part
-              :fields fields
-              }]
-    (uris/mk-uri "videos" args)))
+;;
+(defn- mk-request
+  [part fields video-ids]
+  {:query-type "videos"
+   :args {:id video-ids
+          :part part
+          :fields fields}})
 
-(defn video-uris
-  ":: (chan, str, [str], str) -> chan"
-  [from-ch api-key part fields]
-  (let [->uri (partial mk-video-uri api-key part fields)
-        to-ch (map< ->uri (chan))]
+(defn video-requests
+  ":: (chan, [str], str) -> chan"
+  [from-ch part fields]
+  (let [->req (partial mk-request part fields)
+        to-ch (map< ->req (chan))]
     ;; DO NOT CLOSE CHAN.
     (pipe from-ch to-ch false)
     to-ch))

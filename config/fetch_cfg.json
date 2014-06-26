@@ -1,6 +1,5 @@
 {
     "uris": {
-        "api_key": null,
 	"num_ids_per_request": 50,
         "args": {
             "part": [

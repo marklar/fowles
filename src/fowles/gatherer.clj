@@ -2,11 +2,12 @@
   "Thread dedicated to outputing responses.
    Pull response off responses-channel.
    In the case of search, if response contains a nextPageToken, queue up new URI."
-  (:require [clojure.java.io :as io]
+  (:require [fowles.util :as util]
+            [clojure.java.io :as io]
             [cemerick.url :refer [url-decode]]
             [clojure.string :as str]
             [clojure.data.json :as json]
-            [clojure.core.async :refer [chan go >!! >! alts!!]]))
+            [clojure.core.async :refer [chan go >! alts!!]]))
 
 (def RETRIABLE_STATUS_CODES
   #{500 502 503 504})
@@ -28,30 +29,10 @@
   (and (>= status 200)
        (< status 300)))
 
-(defn- mk-page-uri
-  ":: (str, str) -> str"
-  [uri page-token]
-  ;; If there's already a pageToken:
-  ;;   + It'll be the last query-string arg.
-  ;;   + Remove it.
-  ;; Then append new pageToken.
-  (let [[root-uri] (str/split uri #"\&pageToken=")]
-    (str root-uri "&pageToken=" page-token)))
-
-(defn- get-first-id-from-fetch-uri
-  [uri]
-  (let [[before after]  (str/split uri #"\&id=")
-        [first-id rest] (str/split after #",")]
-    first-id))
-
-(defn- replace-api-key
-  [uri]
-  uri)
-
 (defn- handle-bad-response
   ":: (hmap, chan, str) -> keyword"
-  [{:keys [error status opts]} uris-ch failed-ch]
-  (let [uri (url-decode (:url opts))]
+  [{:keys [error status opts]} requests-ch failed-ch]
+  (let [request (:request opts)]
 
     ;; (if (= 403 status)
     ;;
@@ -61,49 +42,52 @@
     ;;
 
     (if (retriable? error status)
-      ;; re-queue the same URI
+      ;; re-queue the same requests
       (do
-        (println "** requeueing:" uri)
+        (println "** requeueing:" request)
         (println "   error :" error)
         (println "   status:" status)
         (println "")
-        (go (>! uris-ch uri))
+        (go (>! requests-ch request))
         :sleep)
       ;; report failure
       (do
-        (go (>! failed-ch uri))
+        (go (>! failed-ch request))
         ;; stdout
-        (println "** failed:" uri)
+        (println "** failed:" request)
         (println "   error :" error)
         (println "   status:" status)
         (println "")
         :no-sleep))))
 
+(defn- maybe-add-next-page
+  [request resp-body requests-ch]
+  (if-let [page-token (get resp-body "nextPageToken")]
+    (let [new-request (util/update-request-arg request
+                                               :pageToken page-token)]
+      (go (>! requests-ch new-request)))))
+
 (defn- handle-good-response
   ":: (hmap, chan, chan) -> keyword"
-  [{:keys [body opts]} uris-ch bodies-ch]
+  [{:keys [body opts]} requests-ch bodies-ch]
   (let [resp-body (json/read-str body)
-        uri (url-decode (:url opts))]
+        req  (:req opts)]
     (println "ok")
-    ;; use it
-    (>!! bodies-ch resp-body)
-    ;; queue up nextPage, if any
-    (if-let [page-token (get resp-body "nextPageToken")]
-      (>!! uris-ch
-           (mk-page-uri uri page-token)))
-    :no-sleep))
+    (go (>! bodies-ch resp-body))
+    (maybe-add-next-page req resp-body requests-ch))
+  :no-sleep)
 
 (defn- handle-response
   ":: (hmap, chan, chan, str) -> keyword
    Return either :sleep or :no-sleep, to indicate what to do."
-  [response uris-ch bodies-ch failed-ch]
+  [response requests-ch bodies-ch failed-ch]
   (let [{:keys [status error]} response]
     (if (or error (not (success? status)))
-      (handle-bad-response response uris-ch failed-ch)
-      (handle-good-response response uris-ch bodies-ch))))
+      (handle-bad-response response requests-ch failed-ch)
+      (handle-good-response response requests-ch bodies-ch))))
 
 (defn- dequeue
-  [responses-ch uris-ch sleep-ch bodies-ch failed-ch]
+  [responses-ch requests-ch sleep-ch bodies-ch failed-ch]
   (loop [sleep? :no-sleep]
     ;; Possibly tell the requester thread to chill out for a sec.
     (if (= sleep? :sleep)
@@ -112,17 +96,17 @@
     (let [[response c] (alts!! [responses-ch])]
       (if (nil? response)
         nil
-        (let [new-sleep? (handle-response response uris-ch
+        (let [new-sleep? (handle-response response requests-ch
                                           bodies-ch failed-ch)]
           (recur new-sleep?))))))
 
 ;;--------------------------------
 
 (defn gather
-  ":: (chan, chan, chan) -> chan
+  ":: (chan, chan, chan, chan) -> chan
    Given channel of responses, 'output' them in own Thread."
-  [responses-ch uris-ch sleep-ch failed-ch]
+  [responses-ch requests-ch sleep-ch failed-ch]
   (let [bodies-ch (chan)]
-    (.start (Thread. #(dequeue responses-ch uris-ch
+    (.start (Thread. #(dequeue responses-ch requests-ch
                                sleep-ch bodies-ch failed-ch)))
     bodies-ch))

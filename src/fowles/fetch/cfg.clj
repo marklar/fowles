@@ -14,9 +14,6 @@
 
 ;;--------------------------
 
-(defn api-key []
-  (grf :uris :api_key))
-
 (defn num-per-request []
   (grf :uris :num_ids_per_request))
 
@@ -60,8 +57,7 @@
 (defn validate []
   "If valid, return nil.
    Else throw Exception."
-  (doseq [f [api-key
-             num-per-request
+  (doseq [f [num-per-request
              part
              fields
              batch-size

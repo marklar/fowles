@@ -3,7 +3,7 @@
   (:use [clojure.java.io])
   (:require [clojure.data.json :as json]))
 
-(def CFG_FILE_NAME ".config.json")
+(def CFG_FILE_NAME "config/secret.json")
 
 (defn load-cfg
   "If cfg file exists, return cfg data.  Else, throw exception."
@@ -21,9 +21,6 @@
   (defonce cfg (load-cfg CFG_FILE_NAME))
   cfg)
 
-(defn cfg-get [k]
-  (get (get-cfg) k))
-
 ;;----------------------
 
 (defn non-nil-or-throw
@@ -40,7 +37,11 @@
 
 (defn get-required-field
   [config keywords]
-  ;; (clojure.pprint/pprint config)
   (non-nil-or-throw
    (clojure.string/join "." (map name keywords))
    (get-in config keywords)))
+
+;;------------------------
+
+(defn api-keys []
+  (get-required-field (get-cfg) [:api_keys]))

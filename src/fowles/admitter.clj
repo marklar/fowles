@@ -19,22 +19,25 @@
 ;; for "next page" urls.
 ;; (close! to-ch))
 
+(defn- mk-connect-addr
+  [host port]
+  (str "tcp://" host ":" port))
+
 (defn- mk-puller
   [ctx addr]
   (doto (zmq/socket ctx :pull)
-    (zmq/bind addr)))
+    (zmq/connect addr)))
 
 (defn- enq-from-puller
-  [port to-ch]
-  (let [ctx (zmq/context)
-        addr (str "tcp://*:" port)]
+  [host port to-ch]
+  (let [ctx  (zmq/context)
+        addr (mk-connect-addr host port)]
     (with-open [puller (mk-puller ctx addr)]
-      (println "Ready to receive input on addr:" addr)
-      (loop []
+      (println "Ready to receive input from addr:" addr)
+      (while true
         (let [msg (zmq/receive-str puller)]
           (println "receiving:" msg)
-          (go (>! to-ch msg)))
-        (recur)))))
+          (go (>! to-ch msg)))))))
 
 ;;-------------------
 
@@ -46,7 +49,7 @@
 
 (defn from-puller
   ":: int -> chan"
-  [port]
+  [host port]
   (let [to-ch (chan BUFFER_SIZE)]
-    (.start (Thread. #(enq-from-puller port to-ch)))
+    (.start (Thread. #(enq-from-puller host port to-ch)))
     to-ch))

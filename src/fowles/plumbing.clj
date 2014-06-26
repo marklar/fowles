@@ -21,7 +21,9 @@
 
 (defn- get-bodies-channel
   ":: (chan, str, int, int, int) -> chan"
-  [uris-ch failed-file batch-size frequency-ms sleep-ms]
+  [uris-ch
+   ;; failed-file
+   batch-size frequency-ms sleep-ms]
   (let [sleep-ch (chan)
         responses-ch
             (requester/get-responses uris-ch sleep-ch
@@ -29,7 +31,9 @@
                                      frequency-ms
                                      sleep-ms)
         bodies-ch (gatherer/gather responses-ch uris-ch
-                                   sleep-ch failed-file)]
+                                   sleep-ch
+                                   ;; failed-file
+                                   )]
     bodies-ch))
 
 ;;
@@ -51,10 +55,11 @@
      + `uris-ch` for inputing URIs"
   [uris-ch
    batch-size frequency-ms sleep-ms
-   failed-file output-fn]
+   ;; failed-file
+   output-fn]
   (let [;; uris-ch (chan 1000)
         bodies-ch (get-bodies-channel uris-ch
-                                      failed-file
+                                      ;; failed-file
                                       batch-size
                                       frequency-ms
                                       sleep-ms)]

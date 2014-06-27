@@ -6,35 +6,25 @@ Worker process for collecting web data.
 
 ### Core Infrastructure
 
-The core infrastructure works like this:
+Fowles's core infrastructure works like this:
 
-* You feed it URIs.
+* You feed it HTTP request info.
 * It performs GETs concurrently, as fast as it can.
-* It gives you back the response bodies of successful GETs, and it logs which ones failed.
+* It gives you back the response bodies of successful GETs, plus info about the ones which failed.
 
 It backs off, and it retries as necessary.
 
 For YouTube search results, it grabs all subsequent pages (using
 nextPageToken).
 
+We can build layers on top of the core infrastructure to make it easy to perform different kinds of API queries.
+
 
 ### Tools for Collection Jobs
 
-On top of the core infrastructure, there are sets of tools which
-handle some additional work of input and output.  They help you to:
+One such tool that's been built is "Fetch".  It allows you to request the fetching of YouTube videos or channels.  You pass in a stream of IDs, specifying of which type (i.e. "video_id" or "channel_id"), and it returns that entity's JSON string.
 
-* Fetch videos.
-  * You give it video IDs.
-  * It returns the videos' JSON representations.
-* Search for videos by query.
-  * You give it 'q' strings.
-  * It returns pairs of (videoId, channelId).
-* Search for videos by topic.
-  * You give it topicIds.
-  * It returns pairs of (videoId, channelId).
-
-With these tools, it constructs the URIs for you, and it parses the
-responses for you.
+We hope to have intelligent "Search", too, which would allow you to pass in a "q" (query) or a Freebase "topicId" and do iterative searches through a range of dates.
 
 
 ### Input and Output
@@ -43,11 +33,11 @@ To supply input to Fowles and receive its output, you must provide
 software "servers".  You need three:
 
 1. a "ventilator", to queue up inputs
-  * e.g. py/video_id_producer.py (which simply gets its IDs from a file)
+  * e.g. py/id_ventilator.py
 2. a results "sink", to accept outputs from successful requests
-  * e.g. py/video_consumer.py (which simply outputs the responses to stdout)
+  * e.g. py/results_sink.py (which simply outputs the responses to stdout)
 3. a failures "sink": to receive notifications about failed requests
-  * e.g. py/failure_consumer.py (which simply outputs the responses to stdout)
+  * e.g. py/failures_sink.py (which simply outputs the responses to stdout)
 
 
 ## Prerequisites
@@ -84,21 +74,13 @@ your "server" processes mentioned above.
 Fowles has no notion of being "done" with its queue of work.  It just
 waits for more.  When you think it's done, Ctrl-C it.
 
-At the moment, there are three different versions of Fowles, depending
-on whether you want to fetch by videoIds, or search by query, or
-search by topic.  Each has its own executable and configuration file.
-
-The configuration file is required to tell it how to perform its job.
-Currently, the names of these configuration files are hardcoded into
-the different versions of the executables.  (Their names appear
-below.)
 
 ### Configuration
 
 Fowles requires two different configuration files:
 
 * `config/secret.json` - which currently contains only your API keys
-* `config/fetch_cfg.json` - everything else Fowles needs to know
+* `config/fetch.json` - everything else Fowles needs to know
 
 `secret.json` is meant to contain sensitve data.  You don't include
 this file in source control.  It looks like this:
@@ -111,15 +93,10 @@ this file in source control.  It looks like this:
     }
 
 
-`fetch_cfg.json` contains everything else.  A 'default' version can be
+`fetch.json` contains everything else.  A 'default' version can be
 checked into source control.
 
-This configuration file looks something like below.  This one is
-specifically for fetching videos by videoId, so it has one setting
-specific to that purpose (i.e. `requests.num_ids_per_request`).  See
-the `config` directory for examples of all the different types of
-configuration files.
-
+This configuration file looks something like below.
 
     {
         "servers": {
@@ -138,16 +115,31 @@ configuration files.
         },
 
         "requests": {
-            "num_ids_per_request": 50,
-            "args": {
-                "part": [
-                    "contentDetails",
-                    "snippet",
-                    "statistics",
-                    "status",
-                    "topicDetails"
-                 ],
-                 "fields": "items(id,status,statistics,topicDetails,contentDetails(duration,licensedContent),snippet(publishedAt,channelId,title,categoryId,liveBroadcastContent))"
+            "videos": {
+                "num_ids_per_request": 50,
+                "args": {
+                    "part": [
+                        "contentDetails",
+                        "snippet",
+                        "statistics",
+                        "status",
+                        "topicDetails"
+                     ],
+                     "fields": "items(id,status,statistics,topicDetails,contentDetails(duration,licensedContent),snippet(publishedAt,channelId,title,categoryId,liveBroadcastContent))"
+                }
+            },
+            "channels": {
+                "num_ids_per_request": 50,
+                "args": {
+                    "part": [
+                        "snippet",
+                        "contentDetails",
+                        "statistics",
+                        "topicDetails",
+                        "status"
+                    ],
+                    "fields": "items(kind,id,status,statistics,topicDetails,contentDetails,snippet(title,publishedAt))"
+                }
             }
         },
 
@@ -172,53 +164,25 @@ with the YouTube service.  The above settings seem like good defaults.
 
 ### Fetch by videoIds
 
-To fetch by videoIds, run this command:
+To start Fowles, run this command:
 
-    > lein run -m fowles.fetch.core
+    > lein run
 
-It uses the configuration file: `config/fetch_cfg.json`.
+It uses the configuration file: `config/fetch.json`.
 
-If you're using files for providing input and collecting output,
-that's all you need to run.  However, if you're using clients for
-input and output, you need to start those as well.  For example, in
+You'll also need to start the input/output servers.  For example, in
 three different terminal windows, run the following:
 
 The ventilator:
 
-    > python py/video_id_ventilator.py
+    > python py/ids_ventilator.py
 
 The results sink:
 
-    > python py/video_sink.py
+    > python py/results_sink.py
 
 The failures sink:
 
-    > python py/failure_sink.py
+    > python py/failures_sink.py
 
 You can start the processes in any order.  (It's like magic!)
-
-
-# IGNORE EVERYTHING AFTER THIS...
-
-
-### Search by Query
-
-To search by queries, run this command:
-
-    > lein run -m fowles.search.query.core
-
-(At the time of this writing, it doesn't work with producers and
-consumers, only files.)
-
-It uses the configuration file: `config/search_query_cfg.json`.
-
-### Search by Topic
-
-To search by topic, run this command:
-
-    > lein run -m fowles.search.topic.core
-
-(At the time of this writing, it doesn't work with producers and
-consumers, only files.)
-
-It uses the configuration file: `config/search_topic_cfg.json`.

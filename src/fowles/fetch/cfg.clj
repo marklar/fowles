@@ -2,7 +2,7 @@
   "Access configuration info from file."
   (:require [fowles.cfg :as cfg]))
 
-(def FILE_NAME "config/fetch_cfg.json")
+(def FILE_NAME "config/fetch.json")
 
 (def file-cfg)
 (defn get-cfg []
@@ -37,6 +37,13 @@
 (defn num-per-request [vid-or-ch]
   (grf :requests (keyword vid-or-ch) :num_ids_per_request))
 
+;;
+;; Additional parts:
+;;   "brandingSettings",
+;;   "invideoPromotion",
+;;   "auditDetails",
+;;   "contentOwnerDetails"
+;;
 (defn part [vid-or-ch]
   (grf :requests (keyword vid-or-ch) :args :part))
 

@@ -1,6 +1,8 @@
 (ns fowles.fetch.core
   "Fetch videos by id (or list of ids)."
-  (:require [fowles
+  (:refer-clojure :exclude [merge])
+  (:require [clojure.core.async :refer [merge] :as async]
+            [fowles
              [plumbing :as plumbing]
              [failed :as failed]
              [cfg :as secret-cfg]]
@@ -10,16 +12,24 @@
              [uris :as uris]
              [reporter :as reporter]]))
 
-(defn- mk-ids-ch []
-  (admitter/video-ids-from-puller
+(defn- mk-vid-and-chan-ids-chs
+  "returns 2 channels: vid-ids-ch & chan-ids-ch!"
+  []
+  (admitter/id-chs-from-puller
    (cfg/in-host)
    (cfg/in-port)
-   (cfg/num-per-request :videos)))
+   (cfg/num-per-request :videos)
+   (cfg/num-per-request :channels)))
+
+(defn- mk-typed-requests-ch [q-type ids-ch]
+  (uris/get-requests-ch q-type ids-ch
+                        (cfg/part q-type) (cfg/fields q-type)))
 
 (defn- mk-requests-ch []
-  (uris/video-requests (mk-ids-ch)
-                       (cfg/part :videos)
-                       (cfg/fields :videos)))
+  (let [[v-ch c-ch] (mk-vid-and-chan-ids-chs)]
+    (async/merge
+     [(mk-typed-requests-ch :videos   v-ch)
+      (mk-typed-requests-ch :channels c-ch)])))
 
 (defn- get-output-fn []
   (reporter/mk-videos-pusher (cfg/out-host) (cfg/out-port)))

@@ -4,20 +4,9 @@
    + Data:   video-ids, queries.
    + Output: Put for requester."
   (:require [zeromq.zmq :as zmq]
-            [clojure.core.async :refer [go >! chan >!!]]))
+            [clojure.core.async :refer [chan >!!]]))
 
 (def BUFFER_SIZE 1000)
-
-;; TODO: rename to enq-seq
-(defn enq
-  "Enqueue some fixed sequence of items to to-ch.
-   :: (chan, ISeq) -> ()"
-  [to-ch seq]
-  (doseq [i seq]
-    (>!! to-ch i)))
-;; DO NOT CLOSE.  We want the channel pipeline to remain open
-;; for "next page" urls.
-;; (close! to-ch))
 
 (defn- mk-connect-addr
   [host port]
@@ -37,7 +26,8 @@
       (while true
         (let [msg (zmq/receive-str puller)]
           (println "receiving:" msg)
-          (go (>! to-ch msg)))))))
+          ;; -blocking- put
+          (>!! to-ch msg))))))
 
 ;;-------------------
 

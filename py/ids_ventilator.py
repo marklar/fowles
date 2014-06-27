@@ -1,23 +1,16 @@
 import time
 import zmq
 
+#
 # The input file is expected to have on each line:
 #    1. a video_id
 #    2. a tab
 #    3. a channel_id
+# The provided file (below: INPUT_FILE) matches that format.
 #
-# Like this:
-#
-# --T5RKc8RK8	UC7S2CiPev9N7r3AJ7BRRuVQ
-# -6MTsQCMT3Q	UCJrDMFOdv1I2k8n9oK_V21w
-# -77cUxba-aA	UC3d3_X0dUnt8YXVKyqr-XLA
-# -Aa-ZfUIjIQ	UCe4fpq3_Hb8L1tt14SfoLog
-# -Jf7bdHoQy0	UCbTf4RlbdSjTdaE9p2SpWyg
-# ...
 
 # cfg
-INPUT_FILE = "io/video_and_channel_ids.txt"
-# INPUT_FILE = "lots_of_ids.txt"
+INPUT_FILE = "py/100_pairs_of_vid_and_chan_ids.txt"
 PORT = 5557
 
 # globals

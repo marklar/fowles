@@ -22,9 +22,17 @@ We can build layers on top of the core infrastructure to make it easy to perform
 
 ### Tools for Collection Jobs
 
-One such tool that's been built is "Fetch".  It allows you to request the fetching of YouTube videos or channels.  You pass in a stream of IDs, specifying of which type (i.e. "video_id" or "channel_id"), and it returns that entity's JSON string.
+One such tool that's been built is "Fetch".  It allows you to request the fetching of YouTube videos or channels.
 
-We hope to have intelligent "Search", too, which would allow you to pass in a "q" (query) or a Freebase "topicId" and do iterative searches through a range of dates.
+Using a "ventilator" (of which more below), you pass in a stream of IDs, specifying for each which type it is, like this:
+
+    {"video_id": "125QXF2WvN8"}
+    {"channel_id": "UCW8MxuPobO0fVm31V5tOjWg"}
+    {"video_id": "-Aa-ZfUIjIQ"}
+
+Fowles will return each entity's JSON string.
+
+Soon, we hope to have intelligent "Search", too, which would allow you to pass in a "q" (query) or a Freebase "topicId" and do iterative searches through a range of dates.
 
 
 ### Input and Output

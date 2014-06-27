@@ -39,17 +39,13 @@
 ;; https://developers.google.com/youtube/v3/docs/videos/list
 ;;
 (defn- mk-request
-  [part fields video-ids]
-  {:query-type "videos"
+  [query-type part fields video-ids]
+  {:query-type query-type
    :args {:id video-ids
           :part part
           :fields fields}})
 
-(defn video-requests
-  ":: (chan, [str], str) -> chan"
-  [from-ch part fields]
-  (let [->req (partial mk-request part fields)
-        to-ch (map< ->req (chan))]
-    ;; DO NOT CLOSE CHAN.
-    (pipe from-ch to-ch false)
-    to-ch))
+(defn get-requests-ch
+  ":: (keyword, chan, [str], str) -> chan"
+  [query-type from-ch part fields]
+  (map< (partial mk-request query-type part fields) from-ch))

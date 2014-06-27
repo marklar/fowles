@@ -1,0 +1,54 @@
+{
+    "servers": {
+	"input": {
+	    "host": "127.0.0.1",
+	    "port": 5557
+	},
+	"output": {
+	    "host": "127.0.0.1",
+	    "port": 5558
+	},
+	"failed": {
+	    "host": "127.0.0.1",
+	    "port": 5559
+	}
+    },
+
+    "requests": {
+	"videos": {
+	    "num_ids_per_request": 50,
+            "args": {
+		"part": [
+		    "contentDetails",
+		    "snippet",
+		    "statistics",
+		    "status",
+		    "topicDetails"
+		],
+		"fields": "items(kind,id,status,statistics,topicDetails,contentDetails(duration,licensedContent),snippet(publishedAt,channelId,title,categoryId,liveBroadcastContent))"
+	    }
+	},
+
+	"channels": {
+	    "num_ids_per_request": 50,
+            "args": {
+		"part": [
+		    "snippet",
+		    "contentDetails",
+		    "statistics",
+		    "topicDetails",
+		    "status"
+		],
+                "fields": "items(kind,id,status,statistics,topicDetails,contentDetails,snippet(title,publishedAt))"
+	    }
+	}
+    },
+
+    "concurrency": {
+	"batches": {
+	    "num_requests": 5,
+	    "frequency_ms": 250
+	},
+	"sleep_ms": 1000
+    }
+}

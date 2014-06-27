@@ -33,4 +33,4 @@
 
 (defn mk-uri
   [{:keys [query-type args]}]
-  (str BASE_URI "/" query-type "?" (hmap->query-string args)))
+  (str BASE_URI "/" (name query-type) "?" (hmap->query-string args)))

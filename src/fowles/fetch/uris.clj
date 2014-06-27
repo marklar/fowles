@@ -1,6 +1,5 @@
 (ns fowles.fetch.uris
-  (:require [fowles.uris :as uris]
-            [clojure.core.async :refer [chan pipe map<]]))
+  (:require [clojure.core.async :refer [map<]]))
 
 ;; TODO: rename to 'requests'?
 
@@ -39,10 +38,10 @@
 ;; https://developers.google.com/youtube/v3/docs/videos/list
 ;;
 (defn- mk-request
-  [query-type part fields video-ids]
+  [query-type part fields ids]
   {:query-type query-type
-   :args {:id video-ids
-          :part part
+   :args {:id     ids
+          :part   part
           :fields fields}})
 
 (defn get-requests-ch

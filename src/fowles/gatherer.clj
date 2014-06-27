@@ -1,13 +1,13 @@
 (ns fowles.gatherer
   "Thread dedicated to outputing responses.
    Pull response off responses-channel.
-   In the case of search, if response contains a nextPageToken, queue up new URI."
+   If response contains a nextPageToken (for search), queue up new URI."
   (:require [fowles.util :as util]
             [clojure.java.io :as io]
             [cemerick.url :refer [url-decode]]
             [clojure.string :as str]
             [clojure.data.json :as json]
-            [clojure.core.async :refer [chan go >! alts!!]]))
+            [clojure.core.async :refer [chan >!! alts!!]]))
 
 (def RETRIABLE_STATUS_CODES
   #{500 502 503 504})
@@ -48,11 +48,11 @@
         (println "   error :" error)
         (println "   status:" status)
         (println "")
-        (go (>! requests-ch request))
+        (>!! requests-ch request)
         :sleep)
       ;; report failure
       (do
-        (go (>! failed-ch request))
+        (>!! failed-ch request)
         ;; stdout
         (println "** failed:" request)
         (println "   error :" error)
@@ -65,7 +65,7 @@
   (if-let [page-token (get resp-body "nextPageToken")]
     (let [new-request (util/update-request-arg request
                                                :pageToken page-token)]
-      (go (>! requests-ch new-request)))))
+      (>!! requests-ch new-request))))
 
 (defn- handle-good-response
   ":: (hmap, chan, chan) -> keyword"
@@ -73,7 +73,7 @@
   (let [resp-body (json/read-str body)
         req  (:req opts)]
     (println "ok")
-    (go (>! bodies-ch resp-body))
+    (>!! bodies-ch resp-body)
     (maybe-add-next-page req resp-body requests-ch))
   :no-sleep)
 
@@ -91,7 +91,7 @@
   (loop [sleep? :no-sleep]
     ;; Possibly tell the requester thread to chill out for a sec.
     (if (= sleep? :sleep)
-      (go (>! sleep-ch :sleep)))
+      (>!! sleep-ch :sleep))
     ;; Grab another response.
     (let [[response c] (alts!! [responses-ch])]
       (if (nil? response)

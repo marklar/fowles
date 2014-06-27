@@ -1,17 +1,16 @@
 (ns fowles.requester
   (:require [org.httpkit.client :as http]
-            [clojure.core.async :refer [chan go <!! >! >!! alt!!]]
+            [clojure.core.async :refer [chan <!! >!! alt!!]]
             [fowles.util :as util]
             [fowles.uris :as uris]))
 
 (defn- async-get
-  [{:keys [query-type args] :as req}
-   api-key result-ch]
+  [req api-key result-ch]
   (let [new-req (util/update-request-arg req :key api-key)
         uri     (uris/mk-uri new-req)]
     (http/get uri
               {:request new-req}  ;; gets added to 'opts' in callback
-              #(go (>! result-ch %)))))
+              #(>!! result-ch %))))
 
 (defn- deq-and-req
   [ch]
@@ -21,7 +20,7 @@
 
 (defn- sleep-or-get
   [from-ch api-keys to-ch sleep-ch
-   batch-size frequency-ms sleep-ms]
+   batch-size interval-ms sleep-ms]
 
   (let [keys-ch (chan (count api-keys))]
     (doseq [k api-keys] (>!! keys-ch k))
@@ -31,7 +30,7 @@
       (if (= i batch-size)
         ;; We always pause after every batch.
         (do
-          (Thread/sleep frequency-ms)
+          (Thread/sleep interval-ms)
           (recur 0))
         
         ;; Perhaps sleep, perhaps request.
@@ -60,11 +59,11 @@
 
 (defn mk-requests
   ":: ?? "
-  [from-ch api-keys sleep-ch batch-size frequency-ms sleep-ms]
+  [from-ch api-keys sleep-ch batch-size interval-ms sleep-ms]
   (let [to-ch (chan)]
     (.start (Thread. #(sleep-or-get from-ch api-keys to-ch
                                     sleep-ch
                                     batch-size
-                                    frequency-ms
+                                    interval-ms
                                     sleep-ms)))
     to-ch))

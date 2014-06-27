@@ -153,8 +153,8 @@ This configuration file looks something like below.
 
         "concurrency": {
             "batches": {
-                "num_requests": 5,
-                "frequency_ms": 250
+                "num_requests": 50,
+                "interval_ms": 250
             },
             "sleep_ms": 1000
         }

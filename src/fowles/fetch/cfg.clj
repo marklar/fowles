@@ -55,8 +55,8 @@
 (defn batch-size []
   (grf :concurrency :batches :num_requests))
 
-(defn frequency-ms []
-  (grf :concurrency :batches :frequency_ms))
+(defn interval-ms []
+  (grf :concurrency :batches :interval_ms))
   
 (defn sleep-ms []
   (grf :concurrency :sleep_ms))
@@ -84,7 +84,7 @@
 
              ;; concurrency
              batch-size
-             frequency-ms
+             interval-ms
              sleep-ms
              ]]
     (f)))

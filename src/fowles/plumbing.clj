@@ -19,12 +19,12 @@
 (defn- get-bodies-channel
   ":: ??"
   [requests-ch failed-ch api-keys
-   batch-size frequency-ms sleep-ms]
+   batch-size interval-ms sleep-ms]
   (let [sleep-ch (chan)
         responses-ch (requester/mk-requests requests-ch api-keys
                                             sleep-ch
                                             batch-size
-                                            frequency-ms
+                                            interval-ms
                                             sleep-ms)
         bodies-ch (gatherer/gather responses-ch requests-ch
                                    sleep-ch failed-ch)]
@@ -47,14 +47,12 @@
    Return:
      + `requests-ch` for inputing requests"
   [requests-ch failed-ch api-keys
-   batch-size frequency-ms sleep-ms
+   batch-size interval-ms sleep-ms
    output-fn]
-  (let [;; requests-ch (chan 1000)
-        bodies-ch (get-bodies-channel requests-ch
+  (let [bodies-ch (get-bodies-channel requests-ch
                                       failed-ch
                                       api-keys
                                       batch-size
-                                      frequency-ms
+                                      interval-ms
                                       sleep-ms)]
     (.start (Thread. #(dequeue bodies-ch output-fn)))))
-  ;; requests-ch))

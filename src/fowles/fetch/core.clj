@@ -43,7 +43,7 @@
                    (mk-failed-ch)
                    (secret-cfg/api-keys)
                    (cfg/batch-size)
-                   (cfg/frequency-ms)
+                   (cfg/interval-ms)
                    (cfg/sleep-ms)
                    (get-output-fn))
   (while true))

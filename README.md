@@ -147,7 +147,7 @@ configuration files.
                     "status",
                     "topicDetails"
                  ],
-            "fields": "items(id,status,statistics,topicDetails,contentDetails(duration,licensedContent),snippet(publishedAt,channelId,title,categoryId,liveBroadcastContent))"
+                 "fields": "items(id,status,statistics,topicDetails,contentDetails(duration,licensedContent),snippet(publishedAt,channelId,title,categoryId,liveBroadcastContent))"
             }
         },
 

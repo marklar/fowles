@@ -12,6 +12,9 @@
 (defn- grf [& keywords]
   (cfg/get-required-field (get-cfg) keywords))
 
+(defn- gof [& keywords]
+  (cfg/get-optional-field (get-cfg) keywords))
+
 ;;--------------------------
 
 (defn in-host []
@@ -31,14 +34,14 @@
 
 ;;---------------
 
-(defn num-per-request []
-  (grf :requests :num_ids_per_request))
+(defn num-per-request [vid-or-ch]
+  (grf :requests (keyword vid-or-ch) :num_ids_per_request))
 
-(defn part []
-  (grf :requests :args :part))
+(defn part [vid-or-ch]
+  (grf :requests (keyword vid-or-ch) :args :part))
 
-(defn fields []
-  (grf :requests :args :fields))
+(defn fields [vid-or-ch]
+  (gof :requests (keyword vid-or-ch) :args :fields))
 
 ;;--------------
 
@@ -56,15 +59,25 @@
 (defn validate []
   "If valid, return nil.
    Else throw Exception."
-  (doseq [f [num-per-request
-             part
-             fields
-             batch-size
-             frequency-ms
-             sleep-ms
+  (doseq [f [
+             ;; servers
              in-host in-port
              out-host out-port
              failed-host failed-port
-             ;; log-file
+
+             ;; requests
+             ;; + videos
+             #(num-per-request :videos)
+             #(part :videos)
+             #(fields :videos)  ; opt
+             ;; + channels
+             #(num-per-request :channels)
+             #(part :channels)
+             #(fields :channles)  ; opt
+
+             ;; concurrency
+             batch-size
+             frequency-ms
+             sleep-ms
              ]]
     (f)))

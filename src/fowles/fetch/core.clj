@@ -14,12 +14,12 @@
   (admitter/video-ids-from-puller
    (cfg/in-host)
    (cfg/in-port)
-   (cfg/num-per-request)))
+   (cfg/num-per-request :videos)))
 
 (defn- mk-requests-ch []
   (uris/video-requests (mk-ids-ch)
-                       (cfg/part)
-                       (cfg/fields)))
+                       (cfg/part :videos)
+                       (cfg/fields :videos)))
 
 (defn- get-output-fn []
   (reporter/mk-videos-pusher (cfg/out-host) (cfg/out-port)))

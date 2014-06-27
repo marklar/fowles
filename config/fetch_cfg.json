@@ -15,16 +15,36 @@
     },
 
     "requests": {
-	"num_ids_per_request": 50,
-        "args": {
-            "part": [
-		"contentDetails",
-		"snippet",
-		"statistics",
-		"status",
-		"topicDetails"
-	    ],
-            "fields": "items(id,status,statistics,topicDetails,contentDetails(duration,licensedContent),snippet(publishedAt,channelId,title,categoryId,liveBroadcastContent))"
+	"videos": {
+	    "num_ids_per_request": 50,
+            "args": {
+		"part": [
+		    "contentDetails",
+		    "snippet",
+		    "statistics",
+		    "status",
+		    "topicDetails"
+		],
+		"fields": "items(id,status,statistics,topicDetails,contentDetails(duration,licensedContent),snippet(publishedAt,channelId,title,categoryId,liveBroadcastContent))"
+	    }
+	},
+
+	"channels": {
+	    "num_ids_per_request": 50,
+            "args": {
+		"part": [
+		    "snippet",
+		    "contentDetails",
+		    "statistics",
+		    "topicDetails",
+		    "status",
+		    "brandingSettings",
+		    "invideoPromotion",
+		    "auditDetails",
+		    "contentOwnerDetails"
+		],
+                "fields": null
+	    }
 	}
     },
 

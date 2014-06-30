@@ -9,7 +9,7 @@
             [fowles.fetch
              [cfg :as cfg]
              [admitter :as admitter]
-             [uris :as uris]
+             [requests :as requests]
              [reporter :as reporter]]))
 
 (defn- mk-vid-and-chan-ids-chs
@@ -22,8 +22,8 @@
    (cfg/num-per-request :channels)))
 
 (defn- mk-typed-requests-ch [q-type ids-ch]
-  (uris/get-requests-ch q-type ids-ch
-                        (cfg/part q-type) (cfg/fields q-type)))
+  (requests/get-requests-ch q-type ids-ch
+                            (cfg/part q-type) (cfg/fields q-type)))
 
 (defn- mk-requests-ch []
   (let [[v-ch c-ch] (mk-vid-and-chan-ids-chs)]

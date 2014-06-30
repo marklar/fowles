@@ -19,7 +19,7 @@
     v))
 
 (defn- sleep-or-get
-  [from-ch api-keys to-ch sleep-ch
+  [requests-ch api-keys to-ch sleep-ch
    batch-size interval-ms sleep-ms]
 
   (let [keys-ch (chan (count api-keys))]
@@ -43,15 +43,15 @@
                            (Thread/sleep sleep-ms)))
                      (recur 0))
          
-         ;; Grab a URI and do an async-get.
+         ;; Grab a request and do an async-get.
          ;; Do NOT close.  If you see a nil, it's because the
          ;; orig input channel closed, but *not* the retries.
-         from-ch  ([req] (if (nil? req)
-                           (recur i)
-                           (do
-                             (let [api-key (deq-and-req keys-ch)]
-                               (async-get req api-key to-ch)
-                               (recur (inc i))))))
+         requests-ch ([req] (if (nil? req)
+                              (recur i)
+                              (do
+                                (let [api-key (deq-and-req keys-ch)]
+                                  (async-get req api-key to-ch)
+                                  (recur (inc i))))))
          
          :priority true)))))
 
@@ -59,9 +59,9 @@
 
 (defn mk-requests
   ":: ?? "
-  [from-ch api-keys sleep-ch batch-size interval-ms sleep-ms]
+  [requests-ch api-keys sleep-ch batch-size interval-ms sleep-ms]
   (let [to-ch (chan)]
-    (.start (Thread. #(sleep-or-get from-ch api-keys to-ch
+    (.start (Thread. #(sleep-or-get requests-ch api-keys to-ch
                                     sleep-ch
                                     batch-size
                                     interval-ms

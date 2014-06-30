@@ -1,8 +1,6 @@
 (ns fowles.grab
-  (:use [net.cgrand.enlive-html])
   (:require [net.cgrand.enlive-html :as enlive]
-            [clj-http.client :as client]
-            [clojure.string :as str]))
+            [clj-http.client :as client])
 
 ;;
 ;; <cite>www.<b>youtube.com/channel/</b>...ID...</cite>

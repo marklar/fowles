@@ -8,6 +8,8 @@
                  [com.cemerick/url "0.1.1"]
                  [clj-time "0.7.0"]
                  [org.zeromq/cljzmq "0.1.4"]
+                 [clj-http "0.9.2"]
+                 [enlive "1.1.5"]
                  [http-kit "2.1.16"]]
 
   :main fowles.fetch.core

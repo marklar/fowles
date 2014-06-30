@@ -1,7 +1,5 @@
-(ns fowles.fetch.uris
+(ns fowles.fetch.requests
   (:require [clojure.core.async :refer [map<]]))
-
-;; TODO: rename to 'requests'?
 
 ;;
 ;; https://developers.google.com/youtube/v3/getting-started#part
@@ -46,5 +44,5 @@
 
 (defn get-requests-ch
   ":: (keyword, chan, [str], str) -> chan"
-  [query-type from-ch part fields]
-  (map< (partial mk-request query-type part fields) from-ch))
+  [query-type ids-ch part fields]
+  (map< (partial mk-request query-type part fields) ids-ch))

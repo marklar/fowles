@@ -18,7 +18,6 @@
   ;; https://github.com/zeromq/jzmq/issues/29
   ;; https://github.com/technomancy/leiningen/blob/master/sample.project.clj#L280
   ;; ZeroMQ
-  :jvm-opts ["-Djava.library.path=/usr/local/lib"]
+  :jvm-opts ["-Djava.library.path=/usr/local/lib" "-Xmx4g"]
 
   :profiles {:dev {:dependencies [[midje "1.6.0"]]}})
-

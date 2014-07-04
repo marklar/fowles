@@ -26,14 +26,6 @@
 
 ;;-------------------
 
-(def BUFFER_SIZE 1000)
-
-(defn admit [enq-fn]
-  ":: ((chan -> ()) -> chan"
-  (let [to-ch (chan BUFFER_SIZE)]
-    (.start (Thread. #(enq-fn to-ch)))
-    to-ch))
-
 (defn from-puller
   ":: int -> chan"
   [host port]

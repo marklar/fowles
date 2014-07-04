@@ -47,7 +47,14 @@
          ;; Do NOT close.  If you see a nil, it's because the
          ;; orig input channel closed, but *not* the retries.
          requests-ch ([req] (if (nil? req)
-                              (recur i)
+
+                              ;; We're done!
+                              ;; But don't close to-ch.
+                              ;; Can safely do that only when
+                              ;; retries-ch closes.
+                              ;; But how do we know when to do that?
+                              nil
+                              
                               (do
                                 (let [api-key (deq-and-req keys-ch)]
                                   (async-get req api-key to-ch)

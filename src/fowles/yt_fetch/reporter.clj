@@ -1,5 +1,5 @@
 (ns fowles.yt-fetch.reporter
-  "Thread dedicated to outputing responses."
+  "Provides function to write results to results-socket."
   (:use [clojure.core.match :only [match]])
   (:require [fowles 
              [util :as util]]

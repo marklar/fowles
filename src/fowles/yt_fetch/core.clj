@@ -3,12 +3,14 @@
   (:refer-clojure :exclude [merge])
   (:require [clojure.core.async :refer [merge] :as async]
             [fowles
+             [admitter :as admitter]
+             [util :as util]
              [plumbing :as plumbing]
              [failed :as failed]
              [cfg :as secret-cfg]]
             [fowles.yt-fetch
              [cfg :as cfg]
-             [admitter :as admitter]
+             [ids :as ids]
              [requests :as requests]
              [reporter :as reporter]]))
 
@@ -17,12 +19,10 @@
 
 (defn- mk-ids-chs
   ":: () -> {:topic ch}"
-  []
-  (admitter/id-chs-from-puller
-   (cfg/in-host)
-   (cfg/in-port)
-   (cfg/num-per-request :videos)
-   (cfg/num-per-request :channels)))
+  [msg-ch]
+  (ids/id-chs-from-puller msg-ch
+                          (cfg/num-per-request :videos)
+                          (cfg/num-per-request :channels)))
 
 (defn- mk-typed-requests-ch [topic-2-ch topic]
   (requests/get-requests-ch topic
@@ -31,10 +31,13 @@
                             (cfg/part topic)
                             (cfg/fields topic)))
 
-(defn- mk-requests-ch []
-  (let [topic-2-ch (mk-ids-chs)]
+(defn- mk-requests-ch
+  [msg-ch]
+  (let [topic-2-ch (mk-ids-chs msg-ch)]
     (async/merge (map (partial mk-typed-requests-ch topic-2-ch)
                       TOPICS))))
+
+;;---------------------
 
 (defn- get-output-fn []
   (reporter/mk-pusher (cfg/out-host) (cfg/out-port)))
@@ -44,16 +47,32 @@
 
 (defn- fetch []
   ;; Start plumbing Thread.
-  (plumbing/report (mk-requests-ch)
-                   (mk-failed-ch)
-                   (secret-cfg/api-keys)
-                   (cfg/batch-size)
-                   (cfg/interval-ms)
-                   (cfg/sleep-ms)
-                   (get-output-fn))
+  (let [msg-ch (admitter/from-puller (cfg/in-host) (cfg/in-port))]
+    (util/prep-shutdown msg-ch)
+    (plumbing/report (mk-requests-ch msg-ch)
+                     (mk-failed-ch)
+                     (secret-cfg/api-keys)
+                     (cfg/batch-size)
+                     (cfg/interval-ms)
+                     (cfg/sleep-ms)
+                     (get-output-fn)))
   (while true))
 
 ;;---------------
+
+;; (defn- restart-self []
+;;   (let [cmd (str "lein run")
+
+;;   /* Build command: java -jar application.jar */
+;;   final ArrayList<String> command = new ArrayList<String>();
+;;   command.add(javaBin);
+;;   command.add("-jar");
+;;   command.add(currentJar.getPath());
+
+;;   final ProcessBuilder builder = new ProcessBuilder(command);
+;;   builder.start();
+;;   System.exit(0);
+
 
 (defn -main []
   (cfg/validate)

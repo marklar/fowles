@@ -6,8 +6,12 @@
 (defn- deq-failed
   [failed-ch host port]
   (let [pusher (util/mk-pusher host port)]
-    (while true
-      (zmq/send-str pusher (<!! failed-ch)))))
+    (loop []
+      (if-let [v (<!! failed-ch)]
+        (do
+          (zmq/send-str pusher v)
+          (recur))
+        (println "Failed pusher exiting.")))))
 
 ;;--------------------
 

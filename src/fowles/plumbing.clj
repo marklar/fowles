@@ -12,7 +12,8 @@
   ;; because maybe the channel will be closed.
   (loop []
     (let [[body c] (alts!! [bodies-ch])]
-      (if-not (nil? body)
+      (if (nil? body)
+        (println "Plumbing thread exiting.")
         (do
           (output-fn body)
           (recur))))))

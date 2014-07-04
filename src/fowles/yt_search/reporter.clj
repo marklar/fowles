@@ -1,5 +1,5 @@
 (ns fowles.search.reporter
-  "Thread dedicated to outputing responses."
+  "Function for outputing responses to response-socket."
   (:require [fowles.util :as util]
             [clojure.data.json :as json]))
 

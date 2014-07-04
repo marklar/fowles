@@ -1,4 +1,4 @@
-(ns fowles.yt-fetch.admitter
+(ns fowles.yt-fetch.ids
   "Take in whatever input is required to perform data collection.
    + Source: from wherever (zmq socket?).
    + Data:   video-ids, queries.
@@ -9,12 +9,11 @@
             [clojure.data.json :as json]
             [clojure.core.async :refer [chan map< pub sub]]))
 
-(def BUFFER_SIZE 1)
 (def MAX_WAIT_MS 2000)
 
 (defn- mk-grouped-ch
   [size in-ch]
-  (let [out-ch (chan BUFFER_SIZE)]
+  (let [out-ch (chan)]
     (.start
      (Thread.
       #(util/pipe-groups-of-up-to-n in-ch out-ch size MAX_WAIT_MS)))
@@ -40,7 +39,7 @@
 
 (defn- mk-sub-ch-map
   [publication topic id-name]
-  (let [ch (chan BUFFER_SIZE)]
+  (let [ch (chan)]
     (sub publication topic ch)
     {topic
      (map< #(get % id-name) ch)}))
@@ -60,18 +59,16 @@
 (defn- groups
   [type-2-ch num-vid-ids num-chan-ids]
   (assoc type-2-ch
-    :videos   (mk-grouped-ch num-vid-ids
-                             (:videos type-2-ch))
-    :channels (mk-grouped-ch num-chan-ids
-                             (:channels type-2-ch))))
+    :videos   (mk-grouped-ch num-vid-ids  (:videos type-2-ch))
+    :channels (mk-grouped-ch num-chan-ids (:channels type-2-ch))))
 
 ;;-------------------
   
 (defn id-chs-from-puller
   "returns hmap: topic-name -> id-ch"
-  [host port num-vid-ids num-chan-ids]
-  (let [msg-ch       (map< json/read-str (admitter/from-puller host port))
-        publication  (pub msg-ch #(keyword (get % "request")))
+  [msg-ch num-vid-ids num-chan-ids]
+  (let [json-msg-ch  (map< json/read-str msg-ch)
+        publication  (pub json-msg-ch #(keyword (get % "request")))
         type-2-ch    (mk-type-2-ch publication)]
     (apply merge
            (map re-wrap

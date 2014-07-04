@@ -34,12 +34,11 @@
 	    },
 	    "args": {
 		"part": [
-		    "contentDetails",
 		    "id",
 		    "snippet",
 		    "status"
 		],
-		"fields": null
+		"fields": "nextPageToken,items(status,snippet(channelId,title,resourceId,playlistId,publishedAt,channelTitle))"
 	    }
 	},
 

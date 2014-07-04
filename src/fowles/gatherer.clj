@@ -31,7 +31,7 @@
 
 (defn- handle-bad-response
   ":: (hmap, chan, str) -> keyword"
-  [{:keys [error status opts]} requests-ch failed-ch]
+  [{:keys [error status opts]} sleep-ch retries-ch failed-ch]
   (let [request (:request opts)]
 
     ;; (if (= 403 status)
@@ -48,8 +48,9 @@
         (println "   error :" error)
         (println "   status:" status)
         (println "")
-        (>!! requests-ch request)
-        :sleep)
+        (>!! retries-ch request)
+        (>!! sleep-ch :sleep))
+
       ;; report failure
       (do
         (>!! failed-ch (json/write-str request))
@@ -57,18 +58,17 @@
         (println "** failed:" request)
         (println "   error :" error)
         (println "   status:" status)
-        (println "")
-        :no-sleep))))
+        (println "")))))
 
 (defn- maybe-add-next-page
-  [request resp-body requests-ch]
+  [request resp-body next-pages-ch]
   (if-let [page-token (get resp-body "nextPageToken")]
     (let [new-request (assoc-in request [:args :pageToken] page-token)]
-      (>!! requests-ch new-request))))
+      (>!! next-pages-ch new-request))))
 
 (defn- handle-good-response
   ":: (hmap, chan, chan) -> keyword"
-  [{:keys [body opts]} requests-ch bodies-ch]
+  [{:keys [body opts]} next-pages-ch bodies-ch]
   ;; FIXME: don't send clj-hmap, send original json.
   (let [resp-body (json/read-str body)
         request   (:request opts)]
@@ -80,40 +80,40 @@
     ;; based on the request.
     ;; 
     (>!! bodies-ch {:request request, :resp-body resp-body})
-    (maybe-add-next-page request resp-body requests-ch))
-  :no-sleep)
+    (maybe-add-next-page request resp-body next-pages-ch)))
 
 (defn- handle-response
-  ":: (hmap, chan, chan, str) -> keyword
-   Return either :sleep or :no-sleep, to indicate what to do."
-  [response requests-ch bodies-ch failed-ch]
+  ":: (hmap, chan, chan, str) -> keyword"
+  [response sleep-ch next-pages-ch retries-ch bodies-ch failed-ch]
   (let [{:keys [status error]} response]
     (if (or error (not (success? status)))
-      (handle-bad-response response requests-ch failed-ch)
-      (handle-good-response response requests-ch bodies-ch))))
+      (handle-bad-response response sleep-ch retries-ch failed-ch)
+      (handle-good-response response next-pages-ch bodies-ch))))
 
 (defn- dequeue
-  [responses-ch requests-ch sleep-ch bodies-ch failed-ch]
-  (loop [sleep? :no-sleep]
-    ;; Possibly tell the requester thread to chill out for a sec.
-    (if (= sleep? :sleep)
-      (>!! sleep-ch :sleep))
-    ;; Grab another response.
+  [responses-ch sleep-ch next-pages-ch retries-ch
+   bodies-ch failed-ch]
+  (loop []
     (let [[response c] (alts!! [responses-ch])]
       (if (nil? response)
         nil
-        (let [new-sleep? (handle-response response requests-ch
-                                          bodies-ch failed-ch)]
-          (recur new-sleep?))))))
+        (do
+          (handle-response response sleep-ch
+                           next-pages-ch retries-ch
+                           bodies-ch failed-ch)
+          (recur))))))
 
 ;;--------------------------------
 
+;; TODO: Make a hashmap of name->channel.
+
 (defn gather
-  ":: (chan, chan, chan, chan) -> chan
+  ":: (chans*) -> chan
    Given channel of responses, 'output' them in own Thread."
-  [responses-ch requests-ch sleep-ch failed-ch]
+  [responses-ch sleep-ch next-pages-ch retries-ch failed-ch]
   ;; FIXME: rename chan.
   (let [bodies-ch (chan)]
-    (.start (Thread. #(dequeue responses-ch requests-ch
-                               sleep-ch bodies-ch failed-ch)))
+    (.start (Thread. #(dequeue responses-ch
+                               sleep-ch next-pages-ch retries-ch
+                               bodies-ch failed-ch)))
     bodies-ch))

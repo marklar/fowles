@@ -16,6 +16,14 @@
 ;; recordingDetails: 2
 ;;
 
+(def multi-res-requests #{:activities :playlistItems})
+
+(defn- get-max-results
+  [query-type]
+  (if (contains? multi-res-requests query-type)
+    50
+    nil))
+
 ;;
 ;; https://developers.google.com/youtube/v3/docs/videos/list
 ;;
@@ -23,9 +31,10 @@
   [query-type id-name part fields msg]
   {:query-type query-type
    :id-name id-name
-   :args {id-name (get msg id-name)
-          :part   part
-          :fields fields}})
+   :args {id-name     (get msg id-name)
+          :maxResults (get-max-results query-type)
+          :part       part
+          :fields     fields}})
 
 (defn get-requests-ch
   ":: (keyword, chan, [str], str) -> chan"

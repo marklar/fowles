@@ -12,6 +12,7 @@
               {:request new-req}  ;; gets added to 'opts' in callback
               #(>!! result-ch %))))
 
+;; TODO: Put this in util.
 (defn- deq-and-req
   [ch]
   (let [v (<!! ch)]
@@ -19,7 +20,7 @@
     v))
 
 (defn- sleep-or-get
-  [requests-ch api-keys to-ch sleep-ch
+  [requests-ch api-keys to-ch sleep-ch next-pages-ch retries-ch
    batch-size interval-ms sleep-ms]
 
   (let [keys-ch (chan (count api-keys))]
@@ -42,23 +43,33 @@
                            (println " ---- SLEEPING ----")
                            (Thread/sleep sleep-ms)))
                      (recur 0))
-         
-         ;; Grab a request and do an async-get.
-         ;; Do NOT close.  If you see a nil, it's because the
-         ;; orig input channel closed, but *not* the retries.
-         requests-ch ([req] (if (nil? req)
 
-                              ;; We're done!
-                              ;; But don't close to-ch.
-                              ;; Can safely do that only when
-                              ;; retries-ch closes.
-                              ;; But how do we know when to do that?
-                              nil
-                              
-                              (do
+         ;; TODO: DRY this up.  Use alts!! ?
+
+         ;; Do follow-on pages first.
+         next-pages-ch ([req] (if (nil? req)
+                                nil
                                 (let [api-key (deq-and-req keys-ch)]
                                   (async-get req api-key to-ch)
-                                  (recur (inc i))))))
+                                  (println "+ next")
+                                  (recur (inc i)))))
+
+         ;; Next prioritize retries???  (Get rid of internal state.)
+         ;; Or maybe we want to wait on these; YT is having issues.
+         retries-ch    ([req] (if (nil? req)
+                                nil
+                                (let [api-key (deq-and-req keys-ch)]
+                                  (async-get req api-key to-ch)
+                                  (println "- retry")
+                                  (recur (inc i)))))
+
+         ;; Finally, grab a brand-new request...
+         requests-ch   ([req] (if (nil? req)
+                                nil
+                                (let [api-key (deq-and-req keys-ch)]
+                                  (async-get req api-key to-ch)
+                                  (println "% regular")
+                                  (recur (inc i)))))
          
          :priority true)))))
 
@@ -66,10 +77,11 @@
 
 (defn mk-requests
   ":: ?? "
-  [requests-ch api-keys sleep-ch batch-size interval-ms sleep-ms]
-  (let [to-ch (chan)]
+  [requests-ch api-keys sleep-ch next-pages-ch retries-ch
+   batch-size interval-ms sleep-ms]
+  (let [to-ch (chan)]  ;; responses-ch
     (.start (Thread. #(sleep-or-get requests-ch api-keys to-ch
-                                    sleep-ch
+                                    sleep-ch next-pages-ch retries-ch
                                     batch-size
                                     interval-ms
                                     sleep-ms)))

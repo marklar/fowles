@@ -23,14 +23,20 @@
   [requests-ch failed-ch api-keys
    batch-size interval-ms sleep-ms]
   (let [sleep-ch (chan)
+        next-pages-ch (chan)
+        retries-ch (chan)
+        ;; sleeps or gets
         responses-ch (requester/mk-requests requests-ch api-keys
                                             sleep-ch
+                                            next-pages-ch
+                                            retries-ch
                                             batch-size
                                             interval-ms
                                             sleep-ms)
         ;; TODO: rename chan.
-        bodies-ch (gatherer/gather responses-ch requests-ch
-                                   sleep-ch failed-ch)]
+        bodies-ch (gatherer/gather responses-ch
+                                   sleep-ch next-pages-ch
+                                   retries-ch failed-ch)]
     bodies-ch))
 
 ;;

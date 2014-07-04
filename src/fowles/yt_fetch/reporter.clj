@@ -21,7 +21,7 @@
   (let [id-name (:id-name request)]
     (zmq/send-str pusher
                   (json/write-str
-                   {:reqeust  (:query-type request)
+                   {:request  (:query-type request)
                     id-name   (get-in request [:args id-name])
                     :response (get resp-body "items")}))))
 
@@ -35,9 +35,10 @@
   [pusher request resp-body]
   (let [snippets (map #(get % "snippet") (get resp-body "items"))]
     (zmq/send-str pusher
-                  (json/write-str {:request   (:query-type request)
-                                   :channelId (get-in request [:args :channelId])
-                                   :response  snippets}))))
+                  (json/write-str
+                   {:request   (:query-type request)
+                    :channelId (get-in request [:args :channelId])
+                    :response  snippets}))))
 
 ;;-------------------------------
 
@@ -48,7 +49,7 @@
     (fn [{:keys [request resp-body]}]
       (match (:query-type request)
              (:or :channels :videos) (push-items pusher request resp-body)
-             :activities             (push-activities-fancy pusher request resp-body)
-             :playlistItems          (push-playlist pusher request resp-body)
+             :activities  (push-activities-fancy pusher request resp-body)
+             :playlistItems       (push-playlist pusher request resp-body)
              ;; throw!
              :else nil))))

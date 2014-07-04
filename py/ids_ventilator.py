@@ -40,12 +40,29 @@ def send(msg):
     print "sending: %s" % (msg)
     submit_json(msg)
 
+def videos(vid_id):
+    send({'request': 'videos',
+          'id': vid_id})
+
+def channels(chan_id):
+    send({'request': 'channels',
+          'id': chan_id})
+
+def activities(chan_id):
+    send({'request': 'activities',
+          'channelId': chan_id})
+
+def playlistItems(chan_id):
+    playlist_id = re.sub('^UC', 'UU', chan_id)
+    send({'request': 'playlistItems',
+          'playlistId': playlist_id})
+
 def push_video_ids(fname):
     for ln in get_lines(fname):
         [vid_id, chan_id] = ln.split()
-        send({"request": "videos",   "id": vid_id})
-        send({"request": "channels", "id": chan_id})
-        playlist_id = re.sub('^UC', 'UU', chan_id)
-        send({"request": "playlistItems", "playlistId": playlist_id})
+        videos(vid_id)
+        channels(chan_id)
+        activities(chan_id)
+        playlistItems(chan_id)
 
 push_video_ids(INPUT_FILE)

@@ -1,3 +1,4 @@
+import re
 import time
 import zmq
 
@@ -10,7 +11,7 @@ import zmq
 #
 
 # cfg
-INPUT_FILE = "py/100_pairs_of_vid_and_chan_ids.txt"
+INPUT_FILE = "py/10_pairs_of_vid_and_chan_ids.txt"
 PORT = 5557
 
 # globals
@@ -35,15 +36,33 @@ def get_lines(fname):
     with open(fname) as f:
         return (ln.strip('\n') for ln in f.readlines())
 
-def send(key, val):
-    msg = {key: val}
+def send(msg):
     print "sending: %s" % (msg)
     submit_json(msg)
+
+def videos(vid_id):
+    send({'request': 'videos',
+          'id': vid_id})
+
+def channels(chan_id):
+    send({'request': 'channels',
+          'id': chan_id})
+
+def activities(chan_id):
+    send({'request': 'activities',
+          'channelId': chan_id})
+
+def playlistItems(chan_id):
+    playlist_id = re.sub('^UC', 'UU', chan_id)
+    send({'request': 'playlistItems',
+          'playlistId': playlist_id})
 
 def push_video_ids(fname):
     for ln in get_lines(fname):
         [vid_id, chan_id] = ln.split()
-        send("video_id", vid_id)
-        send("channel_id", chan_id)
+        videos(vid_id)
+        channels(chan_id)
+        activities(chan_id)
+        playlistItems(chan_id)
 
 push_video_ids(INPUT_FILE)

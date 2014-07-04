@@ -4,6 +4,7 @@
              [requester :as requester]
              [gatherer :as gatherer]]))
 
+;; TODO: rename 'body'.
 (defn- dequeue
   ":: chan -> ()"
   [bodies-ch output-fn]
@@ -26,6 +27,7 @@
                                             batch-size
                                             interval-ms
                                             sleep-ms)
+        ;; TODO: rename chan.
         bodies-ch (gatherer/gather responses-ch requests-ch
                                    sleep-ch failed-ch)]
     bodies-ch))
@@ -49,6 +51,7 @@
   [requests-ch failed-ch api-keys
    batch-size interval-ms sleep-ms
    output-fn]
+  ;; TODO: rename chan.
   (let [bodies-ch (get-bodies-channel requests-ch
                                       failed-ch
                                       api-keys

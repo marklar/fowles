@@ -33,11 +33,11 @@
 ;;-------------------------------
 ;; ZMQ
 
-(defn- mk-connect-addr
+(defn mk-connect-addr
   [host port]
   (str "tcp://" host ":" port))
 
-(defn- mk-socket
+(defn mk-socket
   ":: (keyword, str, int) -> zmq-socket"
   [push-or-pull host port]
   (let [context (zmq/context 1)]
@@ -47,17 +47,7 @@
 (def mk-pusher (partial mk-socket :push))
 (def mk-puller (partial mk-socket :pull))
 
-;;-------------------------------
-;; YouTube Requests
-
-(defn update-request-arg
-  [request name val]
-  (let [qt (:query-type request)
-        args (:args request)]
-    {:query-type qt
-     :args (assoc args name val)}))
-
-;;-------------------------------
+;;----------------------------
 
 ;; Why doesn't this work?
 (defn prep-shutdown []

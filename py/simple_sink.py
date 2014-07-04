@@ -1,8 +1,7 @@
 import zmq
-import json
 
 # cfg
-PORT = 5558
+PORT = 6001
 
 # globals
 context = None
@@ -20,10 +19,8 @@ def get_puller():
     return puller
 
 def receive():
-    return get_puller().recv_json()
-    # return get_puller().recv()
+    return get_puller().recv()
 
 while True:
     msg = receive()
-    print json.dumps(msg, sort_keys=False,
-                     indent=4, separators=(',', ': '))
+    print 'receiving val: %s' % (msg)

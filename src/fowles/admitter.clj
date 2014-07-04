@@ -3,14 +3,9 @@
    + Source: from wherever (zmq socket?).
    + Data:   video-ids, queries.
    + Output: Put for requester."
-  (:require [zeromq.zmq :as zmq]
+  (:require [fowles.util :as util]
+            [zeromq.zmq :as zmq]
             [clojure.core.async :refer [chan >!!]]))
-
-(def BUFFER_SIZE 1000)
-
-(defn- mk-connect-addr
-  [host port]
-  (str "tcp://" host ":" port))
 
 (defn- mk-puller
   [ctx addr]
@@ -20,7 +15,7 @@
 (defn- enq-from-puller
   [host port to-ch]
   (let [ctx  (zmq/context)
-        addr (mk-connect-addr host port)]
+        addr (util/mk-connect-addr host port)]
     (with-open [puller (mk-puller ctx addr)]
       (println "Ready to receive input from addr:" addr)
       (while true
@@ -31,6 +26,8 @@
 
 ;;-------------------
 
+(def BUFFER_SIZE 1000)
+
 (defn admit [enq-fn]
   ":: ((chan -> ()) -> chan"
   (let [to-ch (chan BUFFER_SIZE)]
@@ -40,6 +37,6 @@
 (defn from-puller
   ":: int -> chan"
   [host port]
-  (let [to-ch (chan BUFFER_SIZE)]
+  (let [to-ch (chan)]  ;; no buffer!
     (.start (Thread. #(enq-from-puller host port to-ch)))
     to-ch))

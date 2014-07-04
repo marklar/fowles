@@ -1,4 +1,4 @@
-(ns fowles.fetch.requests
+(ns fowles.yt-fetch.requests
   (:require [clojure.core.async :refer [map<]]))
 
 ;;
@@ -36,13 +36,13 @@
 ;; https://developers.google.com/youtube/v3/docs/videos/list
 ;;
 (defn- mk-request
-  [query-type part fields ids]
+  [query-type id-name part fields msg]
   {:query-type query-type
-   :args {:id     ids
+   :args {id-name (get msg id-name)
           :part   part
           :fields fields}})
 
 (defn get-requests-ch
   ":: (keyword, chan, [str], str) -> chan"
-  [query-type ids-ch part fields]
-  (map< (partial mk-request query-type part fields) ids-ch))
+  [query-type ids-ch id-name part fields]
+  (map< (partial mk-request query-type id-name part fields) ids-ch))

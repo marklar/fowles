@@ -1,4 +1,4 @@
-(ns fowles.fetch.reporter
+(ns fowles.yt-fetch.reporter
   "Thread dedicated to outputing responses."
   (:require [fowles 
              [util :as util]]
@@ -18,5 +18,5 @@
   [host port]
   (let [pusher (util/mk-pusher host port)]
     (fn [resp-body]
-        (doseq [js (get-item-jsons resp-body)]
-          (zmq/send-str pusher js)))))
+      (doseq [js (get-item-jsons resp-body)]
+        (zmq/send-str pusher js)))))

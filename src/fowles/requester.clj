@@ -6,7 +6,7 @@
 
 (defn- async-get
   [req api-key result-ch]
-  (let [new-req (util/update-request-arg req :key api-key)
+  (let [new-req (assoc-in req [:args :key] api-key)
         uri     (uris/mk-uri new-req)]
     (http/get uri
               {:request new-req}  ;; gets added to 'opts' in callback

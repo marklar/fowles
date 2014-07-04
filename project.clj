@@ -12,13 +12,13 @@
                  [enlive "1.1.5"]
                  [http-kit "2.1.16"]]
 
-  :main fowles.fetch.core
-  :aot [fowles.fetch.core]
+  :main fowles.yt-fetch.core
+  :aot [fowles.yt-fetch.core]
 
   ;; https://github.com/zeromq/jzmq/issues/29
   ;; https://github.com/technomancy/leiningen/blob/master/sample.project.clj#L280
   ;; ZeroMQ
-  :jvm-opts ["-Djava.library.path=/usr/local/lib"]
+  :jvm-opts ["-Djava.library.path=/usr/local/lib" "-Xmx4g"]
 
   :profiles {:dev {:dependencies [[midje "1.6.0"]]}})
 

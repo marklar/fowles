@@ -1,4 +1,4 @@
-(ns fowles.fetch.core
+(ns fowles.yt-fetch.core
   "Fetch videos by id (or list of ids)."
   (:refer-clojure :exclude [merge])
   (:require [clojure.core.async :refer [merge] :as async]
@@ -6,14 +6,31 @@
              [plumbing :as plumbing]
              [failed :as failed]
              [cfg :as secret-cfg]]
-            [fowles.fetch
+            [fowles.yt-fetch
              [cfg :as cfg]
              [admitter :as admitter]
              [requests :as requests]
              [reporter :as reporter]]))
 
-(defn- mk-vid-and-chan-ids-chs
-  "returns 2 channels: vid-ids-ch & chan-ids-ch!"
+;;
+;; GET https://www.googleapis.com/youtube/v3/activities
+;;
+;; channelId= SINGLE ONE
+;;
+;; publishedAfter
+;; part=snippet
+;; fields=nextPageToken,items(snippet(publishedAt,type))
+;; maxResults=50
+;;
+;; pageToken
+;; 
+
+
+;; TODO: Get rid of redundancy here & admitter.
+(def TOPICS [:videos :channels :activities :playlistItems])
+
+(defn- mk-ids-chs
+  ":: () -> {:topic ch}"
   []
   (admitter/id-chs-from-puller
    (cfg/in-host)
@@ -21,15 +38,17 @@
    (cfg/num-per-request :videos)
    (cfg/num-per-request :channels)))
 
-(defn- mk-typed-requests-ch [q-type ids-ch]
-  (requests/get-requests-ch q-type ids-ch
-                            (cfg/part q-type) (cfg/fields q-type)))
+(defn- mk-typed-requests-ch [topic-2-ch topic]
+  (requests/get-requests-ch topic
+                            (get topic-2-ch topic)
+                            (keyword (cfg/id-name topic))
+                            (cfg/part topic)
+                            (cfg/fields topic)))
 
 (defn- mk-requests-ch []
-  (let [[v-ch c-ch] (mk-vid-and-chan-ids-chs)]
-    (async/merge
-     [(mk-typed-requests-ch :videos   v-ch)
-      (mk-typed-requests-ch :channels c-ch)])))
+  (let [topic-2-ch (mk-ids-chs)]
+    (async/merge (map (partial mk-typed-requests-ch topic-2-ch)
+                      TOPICS))))
 
 (defn- get-output-fn []
   (reporter/mk-videos-pusher (cfg/out-host) (cfg/out-port)))

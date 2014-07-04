@@ -52,7 +52,7 @@
         :sleep)
       ;; report failure
       (do
-        (>!! failed-ch request)
+        (>!! failed-ch (json/write-str request))
         ;; stdout
         (println "** failed:" request)
         (println "   error :" error)
@@ -63,15 +63,14 @@
 (defn- maybe-add-next-page
   [request resp-body requests-ch]
   (if-let [page-token (get resp-body "nextPageToken")]
-    (let [new-request (util/update-request-arg request
-                                               :pageToken page-token)]
+    (let [new-request (assoc-in request [:args :pageToken] page-token)]
       (>!! requests-ch new-request))))
 
 (defn- handle-good-response
   ":: (hmap, chan, chan) -> keyword"
   [{:keys [body opts]} requests-ch bodies-ch]
   (let [resp-body (json/read-str body)
-        req  (:req opts)]
+        req       (:request opts)]
     (println "ok")
     (>!! bodies-ch resp-body)
     (maybe-add-next-page req resp-body requests-ch))

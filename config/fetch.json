@@ -15,8 +15,39 @@
     },
 
     "requests": {
+
+	"activities": {
+	    "id": {
+		"name": "channelId",
+		"num_per_request": 1
+	    },
+	    "args": {
+		"part": ["snippet"],
+		"fields": "nextPageToken,items(snippet(publishedAt,type))"
+	    }
+	},
+
+	"playlistItems": {
+	    "id": {
+		"name": "playlistId",
+		"num_per_request": 1
+	    },
+	    "args": {
+		"part": [
+		    "contentDetails",
+		    "id",
+		    "snippet",
+		    "status"
+		],
+		"fields": null
+	    }
+	},
+
 	"videos": {
-	    "num_ids_per_request": 50,
+	    "id": {
+		"name": "id",
+		"num_per_request": 50
+	    },
             "args": {
 		"part": [
 		    "contentDetails",
@@ -30,7 +61,10 @@
 	},
 
 	"channels": {
-	    "num_ids_per_request": 50,
+	    "id": {
+		"name": "id",
+		"num_per_request": 50
+	    },
             "args": {
 		"part": [
 		    "snippet",

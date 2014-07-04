@@ -1,4 +1,4 @@
-(ns fowles.fetch.cfg
+(ns fowles.yt-fetch.cfg
   "Access configuration info from file."
   (:require [fowles.cfg :as cfg]))
 
@@ -34,8 +34,11 @@
 
 ;;---------------
 
-(defn num-per-request [vid-or-ch]
-  (grf :requests (keyword vid-or-ch) :num_ids_per_request))
+(defn num-per-request [request-type]
+  (grf :requests (keyword request-type) :id :num_per_request))
+
+(defn id-name [request-type]
+  (grf :requests (keyword request-type) :id :name))
 
 ;;
 ;; Additional parts:
@@ -44,11 +47,11 @@
 ;;   "auditDetails",
 ;;   "contentOwnerDetails"
 ;;
-(defn part [vid-or-ch]
-  (grf :requests (keyword vid-or-ch) :args :part))
+(defn part [request-type]
+  (grf :requests (keyword request-type) :args :part))
 
-(defn fields [vid-or-ch]
-  (gof :requests (keyword vid-or-ch) :args :fields))
+(defn fields [request-type]
+  (gof :requests (keyword request-type) :args :fields))
 
 ;;--------------
 

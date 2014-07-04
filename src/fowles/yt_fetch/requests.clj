@@ -15,22 +15,6 @@
 ;; player: 0
 ;; recordingDetails: 2
 ;;
-(def PARTS
-  ["contentDetails"  ;; 2
-   "snippet"         ;; 2
-   "statistics"      ;; 2
-   "status"          ;; 2
-   "topicDetails"    ;; 2
-   ])
-
-;; https://developers.google.com/youtube/v3/getting-started#fields
-(def FIELDS
-  (str 
-   "items("
-     "id,status,statistics,topicDetails,"
-     "contentDetails(duration,licensedContent),"  ;; regionRestriction?
-     "snippet(publishedAt,channelId,title,categoryId,liveBroadcastContent)"
-   ")"))
 
 ;;
 ;; https://developers.google.com/youtube/v3/docs/videos/list
@@ -38,6 +22,7 @@
 (defn- mk-request
   [query-type id-name part fields msg]
   {:query-type query-type
+   :id-name id-name
    :args {id-name (get msg id-name)
           :part   part
           :fields fields}})

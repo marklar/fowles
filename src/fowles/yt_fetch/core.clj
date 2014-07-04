@@ -12,20 +12,6 @@
              [requests :as requests]
              [reporter :as reporter]]))
 
-;;
-;; GET https://www.googleapis.com/youtube/v3/activities
-;;
-;; channelId= SINGLE ONE
-;;
-;; publishedAfter
-;; part=snippet
-;; fields=nextPageToken,items(snippet(publishedAt,type))
-;; maxResults=50
-;;
-;; pageToken
-;; 
-
-
 ;; TODO: Get rid of redundancy here & admitter.
 (def TOPICS [:videos :channels :activities :playlistItems])
 
@@ -51,7 +37,7 @@
                       TOPICS))))
 
 (defn- get-output-fn []
-  (reporter/mk-videos-pusher (cfg/out-host) (cfg/out-port)))
+  (reporter/mk-pusher (cfg/out-host) (cfg/out-port)))
 
 (defn- mk-failed-ch []
   (failed/mk-ch (cfg/failed-host) (cfg/failed-port)))

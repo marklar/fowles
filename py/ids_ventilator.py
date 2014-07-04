@@ -11,7 +11,7 @@ import zmq
 #
 
 # cfg
-INPUT_FILE = "py/100_pairs_of_vid_and_chan_ids.txt"
+INPUT_FILE = "py/10_pairs_of_vid_and_chan_ids.txt"
 PORT = 5557
 
 # globals

@@ -66,11 +66,13 @@
 		"num_per_request": 50
 	    },
             "args": {
+		"unused_part": [
+		    "contentDetails",
+		    "topicDetails"
+		],
 		"part": [
 		    "snippet",
-		    "contentDetails",
 		    "statistics",
-		    "topicDetails",
 		    "status"
 		],
                 "fields": "items(kind,id,status,statistics,topicDetails,contentDetails,snippet(title,publishedAt))"

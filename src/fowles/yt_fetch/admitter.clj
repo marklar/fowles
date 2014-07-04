@@ -51,6 +51,7 @@
                     TOPIC_2_ID_NAME)))
 
 (defn- re-wrap
+  "turns it into a msg again, more or less"
   [[topic ids-ch]]
   (let [id-name (get TOPIC_2_ID_NAME topic)]
     {topic (map< #(hash-map :topic topic, (keyword id-name) %)

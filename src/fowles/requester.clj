@@ -31,6 +31,7 @@
       (if (= i batch-size)
         ;; We always pause after every batch.
         (do
+          (System/gc)
           (Thread/sleep interval-ms)
           (recur 0))
         

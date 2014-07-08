@@ -7,17 +7,8 @@
              [util :as util]
              [admitter :as admitter]]
             [clojure.data.json :as json]
+            ;; [clojure.core.async :refer [chan map< pub sub]]))
             [clojure.core.async :refer [chan map< pub sub]]))
-
-(def MAX_WAIT_MS 2000)
-
-(defn- mk-grouped-ch
-  [size in-ch]
-  (let [out-ch (chan)]
-    (.start
-     (Thread.
-      #(util/pipe-groups-of-up-to-n in-ch out-ch size MAX_WAIT_MS)))
-    out-ch))
 
 ;;
 ;; We expect `msg` to be of one of the following types:
@@ -56,11 +47,15 @@
     {topic (map< #(hash-map :topic topic, (keyword id-name) %)
                  ids-ch)}))
 
+(def MAX_WAIT_MS 2000)
+
 (defn- groups
   [type-2-ch num-vid-ids num-chan-ids]
   (assoc type-2-ch
-    :videos   (mk-grouped-ch num-vid-ids  (:videos type-2-ch))
-    :channels (mk-grouped-ch num-chan-ids (:channels type-2-ch))))
+    :videos   (util/mk-grouped-ch (:videos type-2-ch)
+                                  num-vid-ids MAX_WAIT_MS)
+    :channels (util/mk-grouped-ch (:channels type-2-ch)
+                                  num-chan-ids MAX_WAIT_MS)))
 
 ;;-------------------
   

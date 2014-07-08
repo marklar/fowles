@@ -46,6 +46,18 @@
       (let [c (get-n-in-ms in-ch num max-wait-ms out-ch)]
         (recur c)))))
 
+(defn mk-grouped-ch
+  [in-ch size wait-ms]
+  ;; Instead of starting a thread here, use `go`.
+  (let [out-ch (chan)]
+    (.start
+     (Thread.
+      #(pipe-groups-of-up-to-n in-ch out-ch size wait-ms)))
+    out-ch))
+  ;; (let [out-ch (chan)]
+  ;;   (go (pipe-groups-of-up-to-n in-ch out-ch size wait-ms))
+  ;;   out-ch))
+
 ;;-------------------------------
 ;; ZMQ
 

@@ -75,13 +75,13 @@
 
 ;; (defn- restart-self []
 ;;   (let [cmd (str "lein run")
-
+;;
 ;;   /* Build command: java -jar application.jar */
 ;;   final ArrayList<String> command = new ArrayList<String>();
 ;;   command.add(javaBin);
 ;;   command.add("-jar");
 ;;   command.add(currentJar.getPath());
-
+;;
 ;;   final ProcessBuilder builder = new ProcessBuilder(command);
 ;;   builder.start();
 ;;   System.exit(0);

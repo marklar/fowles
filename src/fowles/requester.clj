@@ -4,21 +4,22 @@
             [fowles.util :as util]
             [fowles.uris :as uris]))
 
-;; msg: {:request {}, :acc []}
-(defn- async-get
-  [msg api-key result-ch]
-  (let [new-msg (assoc-in msg [:request :args :key] api-key)
-        uri     (uris/mk-uri (:request new-msg))]
-    (http/get uri
-              {:msg new-msg}  ;; gets added to 'opts' in callback
-              #(>!! result-ch %))))
-
 ;; TODO: Put this in util.
 (defn- deq-and-req
   [ch]
   (let [v (<!! ch)]
     (>!! ch v)
     v))
+
+(defn- async-get
+  "msg: {:request {}, :resp-bodies []}"
+  [msg keys-ch result-ch]
+  (let [api-key (deq-and-req keys-ch)
+        new-msg (assoc-in msg [:request :args :key] api-key)
+        uri     (uris/mk-uri (:request new-msg))]
+    (http/get uri
+              {:msg new-msg}  ;; gets added to 'opts' in callback
+              #(>!! result-ch %))))
 
 (defn- sleep-or-get
   [requests-ch api-keys to-ch sleep-ch next-pages-ch retries-ch
@@ -51,26 +52,23 @@
          ;; Do follow-on pages first.
          next-pages-ch ([msg] (if (nil? msg)
                                 nil
-                                (let [api-key (deq-and-req keys-ch)]
-                                  (async-get msg api-key to-ch)
-                                  (println "+ next")
+                                (do
+                                  (async-get msg keys-ch to-ch)
                                   (recur (inc i)))))
 
          ;; Next prioritize retries???  (Get rid of internal state.)
          ;; Or maybe we want to wait on these; YT is having issues.
          retries-ch    ([msg] (if (nil? msg)
                                 nil
-                                (let [api-key (deq-and-req keys-ch)]
-                                  (async-get msg api-key to-ch)
-                                  (println "- retry")
+                                (do
+                                  (async-get msg keys-ch to-ch)
                                   (recur (inc i)))))
 
          ;; Finally, grab a brand-new request...
          requests-ch   ([msg] (if (nil? msg)
                                 nil
-                                (let [api-key (deq-and-req keys-ch)]
-                                  (async-get msg api-key to-ch)
-                                  (println "% regular")
+                                (do
+                                  (async-get msg keys-ch to-ch)
                                   (recur (inc i)))))
          
          :priority true)))))

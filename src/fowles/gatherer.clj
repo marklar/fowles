@@ -34,13 +34,6 @@
   [{:keys [error status opts]} sleep-ch retries-ch failed-ch]
   (let [msg (:msg opts)]
 
-    ;; (if (= 403 status)
-    ;;
-    ;; If the status code is 403,
-    ;; that means we've reached our daily usage limits.
-    ;; Switch to a new API key.
-    ;;
-
     (if (retriable? error status)
       ;; re-queue the same requests
       (do
@@ -66,14 +59,12 @@
   ;; FIXME: don't send clj-hmap, send original json.
   (let [resp-body (json/read-str body)
         msg       (:msg opts)]
-    (println "ok")
     (let [new-acc    (conj (:resp-bodies msg) resp-body)
           page-token (get resp-body "nextPageToken")]
       (if page-token
         (let [new-msg 
               (assoc (assoc-in msg [:request :args :pageToken] page-token)
                 :resp-bodies new-acc)]
-          (println "-> nextPage")
           (>!! next-pages-ch new-msg))
         (>!! bodies-ch {:request (:request msg), :resp-bodies new-acc})))))
 

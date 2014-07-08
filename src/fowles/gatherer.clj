@@ -29,6 +29,11 @@
   (and (>= status 200)
        (< status 300)))
 
+(defn- log [s msg error status]
+  (println "** " s ":" msg
+           "\n   error :" error
+           "\n   status:" status))
+
 (defn- handle-bad-response
   ":: (hmap, chan, str) -> keyword"
   [{:keys [error status opts]} sleep-ch retries-ch failed-ch]
@@ -37,37 +42,34 @@
     (if (retriable? error status)
       ;; re-queue the same requests
       (do
-        (println "** requeueing:" msg)
-        (println "   error :" error)
-        (println "   status:" status)
-        (println "")
+        (log "requeueing" msg error status)
         (>!! retries-ch msg)
         (>!! sleep-ch :sleep))
-
       ;; report failure
       (do
-        (>!! failed-ch (json/write-str msg))
-        ;; stdout
-        (println "** failed:" msg)
-        (println "   error :" error)
-        (println "   status:" status)
-        (println "")))))
+        (log "failed" msg error status)
+        (>!! failed-ch (json/write-str msg))))))
 
 (defn- handle-good-response
   ":: (hmap, chan, chan) -> keyword"
   [{:keys [body opts]} next-pages-ch bodies-ch]
   ;; FIXME: don't send clj-hmap, send original json.
-  (let [resp-body (json/read-str body)
-        msg       (:msg opts)]
-    (println "ok")
-    (let [new-acc    (conj (:resp-bodies msg) resp-body)
-          page-token (get resp-body "nextPageToken")]
+  ;; However, we do need to extract the nextPageToken.
+  (let [resp-body  (json/read-str body)
+        msg        (:msg opts)
+        new-acc    (conj (:resp-bodies msg) resp-body)
+        req        (:request msg)
+        page-token (get resp-body "nextPageToken")]
+      (println "ok")
       (if page-token
-        (let [new-msg 
-              (assoc (assoc-in msg [:request :args :pageToken] page-token)
-                :resp-bodies new-acc)]
-          (>!! next-pages-ch new-msg))
-        (>!! bodies-ch {:request (:request msg), :resp-bodies new-acc})))))
+        ;; We have another page to grab.  Loop back.
+        (>!! next-pages-ch 
+             {:request (assoc-in req [:args :pageToken] page-token)
+              :resp-bodies new-acc})
+        ;; We're done.  Send accumulated result to reporter.
+        (>!! bodies-ch
+             {:request req
+              :resp-bodies new-acc}))))
 
 (defn- handle-response
   ":: (hmap, chan, chan, str) -> keyword"

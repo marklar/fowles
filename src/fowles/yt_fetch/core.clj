@@ -59,7 +59,6 @@
   (failed/mk-ch (cfg/failed-host) (cfg/failed-port)))
 
 (defn- fetch []
-  ;; Start plumbing Thread.
   (let [msg-ch (admitter/from-puller (cfg/in-host) (cfg/in-port))]
     (util/prep-shutdown msg-ch)
     (plumbing/report (mk-requests-ch msg-ch)

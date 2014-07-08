@@ -22,7 +22,6 @@
 (defn from-puller
   ":: int -> chan"
   [host port]
-    ;; (.start (Thread. #(enq-from-puller host port to-ch)))
   (let [to-ch  (chan)
         ctx    (zmq/context)
         addr   (util/mk-connect-addr host port)

@@ -1,22 +1,19 @@
 (ns fowles.failed
-  (:require [clojure.core.async :refer [<!! chan]]
+  (:require [clojure.core.async :refer [go-loop <! chan close!]]
             [zeromq.zmq :as zmq]
             [fowles.util :as util]))
 
-(defn- deq-failed
-  [failed-ch host port]
-  (let [pusher (util/mk-pusher host port)]
-    (loop []
-      (if-let [v (<!! failed-ch)]
-        (do
-          (zmq/send-str pusher v)
-          (recur))
-        (println "Failed pusher exiting.")))))
-
-;;--------------------
-
 (defn mk-ch
   [host port]
-  (let [failed-ch (chan)]
-    (.start (Thread. #(deq-failed failed-ch host port)))
+  (let [failed-ch (chan)
+        pusher    (util/mk-pusher host port)]
+    (go-loop []
+      (if-let [v (<! failed-ch)]
+      (do
+        (zmq/send-str pusher v)
+        (recur))
+      (do
+        (println "Failed pusher exiting.")
+        (zmq/close pusher)
+        (close! failed-ch))))
     failed-ch))

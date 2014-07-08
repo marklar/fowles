@@ -47,12 +47,12 @@
         (recur c)))))
 
 (defn mk-grouped-ch
-  [in-ch size wait-ms]
+  [in-ch size max-wait-ms]
   ;; Instead of starting a thread here, use `go`.
   (let [out-ch (chan)]
     (.start
      (Thread.
-      #(pipe-groups-of-up-to-n in-ch out-ch size wait-ms)))
+      #(pipe-groups-of-up-to-n in-ch out-ch size max-wait-ms)))
     out-ch))
   ;; (let [out-ch (chan)]
   ;;   (go (pipe-groups-of-up-to-n in-ch out-ch size wait-ms))

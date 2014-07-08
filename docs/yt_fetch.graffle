@@ -223,9 +223,9 @@
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<string>0</string>
+						<string>0.4</string>
 						<key>g</key>
-						<string>1</string>
+						<string>0.8</string>
 						<key>r</key>
 						<string>1</string>
 					</dict>
@@ -274,9 +274,9 @@
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<string>0</string>
+						<string>0.4</string>
 						<key>g</key>
-						<string>1</string>
+						<string>0.8</string>
 						<key>r</key>
 						<string>1</string>
 					</dict>
@@ -338,8 +338,8 @@
 
 \f0\fs24 \cf0 Legend\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
-\cf0 green: POSIX thread\
-yellow: async channel\
+\cf0 grey: POSIX thread\
+melon: async channel\
 blue: zmq socket}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
@@ -379,11 +379,11 @@ blue: zmq socket}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<string>0.4</string>
+						<string>0.701961</string>
 						<key>g</key>
-						<string>1</string>
+						<string>0.701961</string>
 						<key>r</key>
-						<string>0.8</string>
+						<string>0.701961</string>
 					</dict>
 				</dict>
 			</dict>
@@ -433,11 +433,11 @@ reporter}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<string>0.4</string>
+						<string>0.701961</string>
 						<key>g</key>
-						<string>1</string>
+						<string>0.701961</string>
 						<key>r</key>
-						<string>0.8</string>
+						<string>0.701961</string>
 					</dict>
 				</dict>
 			</dict>
@@ -694,11 +694,11 @@ reporter}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<string>0.4</string>
+						<string>0.701961</string>
 						<key>g</key>
-						<string>1</string>
+						<string>0.701961</string>
 						<key>r</key>
-						<string>0.8</string>
+						<string>0.701961</string>
 					</dict>
 				</dict>
 			</dict>
@@ -748,11 +748,11 @@ grouper}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<string>0.4</string>
+						<string>0.701961</string>
 						<key>g</key>
-						<string>1</string>
+						<string>0.701961</string>
 						<key>r</key>
-						<string>0.8</string>
+						<string>0.701961</string>
 					</dict>
 				</dict>
 			</dict>
@@ -802,11 +802,11 @@ admitter}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<string>0.4</string>
+						<string>0.701961</string>
 						<key>g</key>
-						<string>1</string>
+						<string>0.701961</string>
 						<key>r</key>
-						<string>0.8</string>
+						<string>0.701961</string>
 					</dict>
 				</dict>
 			</dict>
@@ -919,9 +919,9 @@ grouper}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<string>0</string>
+						<string>0.4</string>
 						<key>g</key>
-						<string>1</string>
+						<string>0.8</string>
 						<key>r</key>
 						<string>1</string>
 					</dict>
@@ -1270,9 +1270,9 @@ grouper}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<string>0</string>
+						<string>0.4</string>
 						<key>g</key>
-						<string>1</string>
+						<string>0.8</string>
 						<key>r</key>
 						<string>1</string>
 					</dict>
@@ -1321,9 +1321,9 @@ grouper}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<string>0</string>
+						<string>0.4</string>
 						<key>g</key>
-						<string>1</string>
+						<string>0.8</string>
 						<key>r</key>
 						<string>1</string>
 					</dict>
@@ -1730,9 +1730,9 @@ grouper}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<string>0</string>
+						<string>0.4</string>
 						<key>g</key>
-						<string>1</string>
+						<string>0.8</string>
 						<key>r</key>
 						<string>1</string>
 					</dict>
@@ -1781,9 +1781,9 @@ grouper}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<string>0</string>
+						<string>0.4</string>
 						<key>g</key>
-						<string>1</string>
+						<string>0.8</string>
 						<key>r</key>
 						<string>1</string>
 					</dict>
@@ -1832,9 +1832,9 @@ grouper}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<string>0</string>
+						<string>0.4</string>
 						<key>g</key>
-						<string>1</string>
+						<string>0.8</string>
 						<key>r</key>
 						<string>1</string>
 					</dict>
@@ -1883,9 +1883,9 @@ grouper}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<string>0</string>
+						<string>0.4</string>
 						<key>g</key>
-						<string>1</string>
+						<string>0.8</string>
 						<key>r</key>
 						<string>1</string>
 					</dict>
@@ -1934,9 +1934,9 @@ grouper}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<string>0</string>
+						<string>0.4</string>
 						<key>g</key>
-						<string>1</string>
+						<string>0.8</string>
 						<key>r</key>
 						<string>1</string>
 					</dict>
@@ -1985,9 +1985,9 @@ grouper}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<string>0</string>
+						<string>0.4</string>
 						<key>g</key>
-						<string>1</string>
+						<string>0.8</string>
 						<key>r</key>
 						<string>1</string>
 					</dict>
@@ -2036,9 +2036,9 @@ grouper}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<string>0</string>
+						<string>0.4</string>
 						<key>g</key>
-						<string>1</string>
+						<string>0.8</string>
 						<key>r</key>
 						<string>1</string>
 					</dict>
@@ -2087,9 +2087,9 @@ grouper}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<string>0</string>
+						<string>0.4</string>
 						<key>g</key>
-						<string>1</string>
+						<string>0.8</string>
 						<key>r</key>
 						<string>1</string>
 					</dict>
@@ -2138,9 +2138,9 @@ grouper}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<string>0</string>
+						<string>0.4</string>
 						<key>g</key>
-						<string>1</string>
+						<string>0.8</string>
 						<key>r</key>
 						<string>1</string>
 					</dict>
@@ -2189,9 +2189,9 @@ grouper}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<string>0</string>
+						<string>0.4</string>
 						<key>g</key>
-						<string>1</string>
+						<string>0.8</string>
 						<key>r</key>
 						<string>1</string>
 					</dict>
@@ -2240,9 +2240,9 @@ grouper}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<string>0</string>
+						<string>0.4</string>
 						<key>g</key>
-						<string>1</string>
+						<string>0.8</string>
 						<key>r</key>
 						<string>1</string>
 					</dict>
@@ -2469,9 +2469,9 @@ grouper}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<string>0</string>
+						<string>0.4</string>
 						<key>g</key>
-						<string>1</string>
+						<string>0.8</string>
 						<key>r</key>
 						<string>1</string>
 					</dict>
@@ -2513,9 +2513,9 @@ grouper}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<string>0</string>
+						<string>0.4</string>
 						<key>g</key>
-						<string>1</string>
+						<string>0.8</string>
 						<key>r</key>
 						<string>1</string>
 					</dict>
@@ -2557,9 +2557,9 @@ grouper}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<string>0</string>
+						<string>0.4</string>
 						<key>g</key>
-						<string>1</string>
+						<string>0.8</string>
 						<key>r</key>
 						<string>1</string>
 					</dict>
@@ -2601,11 +2601,11 @@ grouper}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<string>0.4</string>
+						<string>0.701961</string>
 						<key>g</key>
-						<string>1</string>
+						<string>0.701961</string>
 						<key>r</key>
-						<string>0.8</string>
+						<string>0.701961</string>
 					</dict>
 				</dict>
 			</dict>
@@ -2645,11 +2645,11 @@ grouper}</string>
 					<key>Color</key>
 					<dict>
 						<key>b</key>
-						<string>0.4</string>
+						<string>0.701961</string>
 						<key>g</key>
-						<string>1</string>
+						<string>0.701961</string>
 						<key>r</key>
-						<string>0.8</string>
+						<string>0.701961</string>
 					</dict>
 				</dict>
 			</dict>
@@ -2714,7 +2714,7 @@ grouper}</string>
 	<key>MasterSheets</key>
 	<array/>
 	<key>ModificationDate</key>
-	<string>2014-07-04 22:38:30 +0000</string>
+	<string>2014-07-07 23:42:04 +0000</string>
 	<key>Modifier</key>
 	<string>Mark Wong-VanHaren</string>
 	<key>NotesVisible</key>

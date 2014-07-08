@@ -4,12 +4,13 @@
             [fowles.util :as util]
             [fowles.uris :as uris]))
 
+;; msg: {:request {}, :acc []}
 (defn- async-get
-  [req api-key result-ch]
-  (let [new-req (assoc-in req [:args :key] api-key)
-        uri     (uris/mk-uri new-req)]
+  [msg api-key result-ch]
+  (let [new-msg (assoc-in msg [:request :args :key] api-key)
+        uri     (uris/mk-uri (:request new-msg))]
     (http/get uri
-              {:request new-req}  ;; gets added to 'opts' in callback
+              {:msg new-msg}  ;; gets added to 'opts' in callback
               #(>!! result-ch %))))
 
 ;; TODO: Put this in util.
@@ -48,27 +49,27 @@
          ;; TODO: DRY this up.  Use alts!! ?
 
          ;; Do follow-on pages first.
-         next-pages-ch ([req] (if (nil? req)
+         next-pages-ch ([msg] (if (nil? msg)
                                 nil
                                 (let [api-key (deq-and-req keys-ch)]
-                                  (async-get req api-key to-ch)
+                                  (async-get msg api-key to-ch)
                                   (println "+ next")
                                   (recur (inc i)))))
 
          ;; Next prioritize retries???  (Get rid of internal state.)
          ;; Or maybe we want to wait on these; YT is having issues.
-         retries-ch    ([req] (if (nil? req)
+         retries-ch    ([msg] (if (nil? msg)
                                 nil
                                 (let [api-key (deq-and-req keys-ch)]
-                                  (async-get req api-key to-ch)
+                                  (async-get msg api-key to-ch)
                                   (println "- retry")
                                   (recur (inc i)))))
 
          ;; Finally, grab a brand-new request...
-         requests-ch   ([req] (if (nil? req)
+         requests-ch   ([msg] (if (nil? msg)
                                 nil
                                 (let [api-key (deq-and-req keys-ch)]
-                                  (async-get req api-key to-ch)
+                                  (async-get msg api-key to-ch)
                                   (println "% regular")
                                   (recur (inc i)))))
          

@@ -32,7 +32,7 @@
 (defn- handle-bad-response
   ":: (hmap, chan, str) -> keyword"
   [{:keys [error status opts]} sleep-ch retries-ch failed-ch]
-  (let [request (:request opts)]
+  (let [msg (:msg opts)]
 
     ;; (if (= 403 status)
     ;;
@@ -44,43 +44,38 @@
     (if (retriable? error status)
       ;; re-queue the same requests
       (do
-        (println "** requeueing:" request)
+        (println "** requeueing:" msg)
         (println "   error :" error)
         (println "   status:" status)
         (println "")
-        (>!! retries-ch request)
+        (>!! retries-ch msg)
         (>!! sleep-ch :sleep))
 
       ;; report failure
       (do
-        (>!! failed-ch (json/write-str request))
+        (>!! failed-ch (json/write-str msg))
         ;; stdout
-        (println "** failed:" request)
+        (println "** failed:" msg)
         (println "   error :" error)
         (println "   status:" status)
         (println "")))))
-
-(defn- maybe-add-next-page
-  [request resp-body next-pages-ch]
-  (if-let [page-token (get resp-body "nextPageToken")]
-    (let [new-request (assoc-in request [:args :pageToken] page-token)]
-      (>!! next-pages-ch new-request))))
 
 (defn- handle-good-response
   ":: (hmap, chan, chan) -> keyword"
   [{:keys [body opts]} next-pages-ch bodies-ch]
   ;; FIXME: don't send clj-hmap, send original json.
   (let [resp-body (json/read-str body)
-        request   (:request opts)]
+        msg       (:msg opts)]
     (println "ok")
-    ;; 
-    ;; FIXME: don't have a 'bodies-ch',
-    ;; but rather a 'req-and-bodies-ch'.
-    ;; We can choose what to do with the body
-    ;; based on the request.
-    ;; 
-    (>!! bodies-ch {:request request, :resp-body resp-body})
-    (maybe-add-next-page request resp-body next-pages-ch)))
+    (let [new-acc    (conj (:resp-bodies msg) resp-body)
+          page-token (get resp-body "nextPageToken")]
+      (if page-token
+        (let [new-msg 
+              (assoc (assoc-in msg [:request :args :pageToken] page-token)
+                :resp-bodies new-acc)]
+          (println "-> nextPage")
+          (>!! next-pages-ch new-msg))
+        (>!! bodies-ch {:request (:request msg), :resp-bodies new-acc})))))
 
 (defn- handle-response
   ":: (hmap, chan, chan, str) -> keyword"

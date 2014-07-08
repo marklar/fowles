@@ -7,49 +7,54 @@
             [clojure.data.json :as json]))
 
 (defn- push-items
-  [pusher request resp-body]
+  [pusher request resp-bodies]
   (let [id-name (:id-name request)]
-    (doseq [item (get resp-body "items")]
-      (zmq/send-str pusher
-                    (json/write-str
-                     {:request  (:query-type request)
-                      id-name   (get item (name id-name))
-                      :response item})))))
+    ;; TODO: Possible to combine these two `doseq`s?
+    (doseq [resp-body resp-bodies]
+      (doseq [item (get resp-body "items")]
+        (zmq/send-str pusher
+                      (json/write-str
+                       {:request  (:query-type request)
+                        id-name   (get item (name id-name))
+                        :response item}))))))
 
 (defn- push-playlist
-  [pusher request resp-body]
-  (let [id-name (:id-name request)]
+  [pusher request resp-bodies]
+  (let [id-name   (:id-name request)
+        all-items (flatten (map #(get % "items") resp-bodies))]
     (zmq/send-str pusher
                   (json/write-str
                    {:request  (:query-type request)
                     id-name   (get-in request [:args id-name])
-                    :response (get resp-body "items")}))))
+                    :response all-items}))))
 
 ;;-------------------------------
 
 (defn- push-activities-simple
-  [pusher request resp-body]
-  (zmq/send-str pusher (json/write-str resp-body)))
+  [pusher request resp-bodies]
+  (let [all-items (flatten (map #(get % "items") resp-bodies))]
+    (zmq/send-str pusher (json/write-str all-items))))
 
 (defn- push-activities-fancy
-  [pusher request resp-body]
-  (let [snippets (map #(get % "snippet") (get resp-body "items"))]
+  [pusher request resp-bodies]
+  (let [all-snippets (map #(get % "snippet")
+                          (flatten (map #(get % "items") resp-bodies)))]
     (zmq/send-str pusher
                   (json/write-str
                    {:request   (:query-type request)
                     :channelId (get-in request [:args :channelId])
-                    :response  snippets}))))
+                    :response  all-snippets}))))
 
 ;;-------------------------------
 
 (defn mk-pusher
   [host port]
   (let [pusher (util/mk-pusher host port)]
-    ;; 'resp-body' is a clj data structure (not json).
-    (fn [{:keys [request resp-body]}]
+    ;; acc is seq of 'resp-body', each a clj data structure (not json).
+    (fn [{:keys [request resp-bodies]}]
       (match (:query-type request)
-             (:or :channels :videos) (push-items pusher request resp-body)
-             :activities  (push-activities-fancy pusher request resp-body)
-             :playlistItems       (push-playlist pusher request resp-body)
+             (:or :channels :videos) (push-items pusher request resp-bodies)
+             :activities  (push-activities-fancy pusher request resp-bodies)
+             :playlistItems       (push-playlist pusher request resp-bodies)
              ;; throw!
              :else nil))))

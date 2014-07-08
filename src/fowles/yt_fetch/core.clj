@@ -1,7 +1,7 @@
 (ns fowles.yt-fetch.core
   "Fetch videos by id (or list of ids)."
   (:refer-clojure :exclude [merge])
-  (:require [clojure.core.async :refer [merge] :as async]
+  (:require [clojure.core.async :refer [merge map<] :as async]
             [fowles
              [admitter :as admitter]
              [util :as util]
@@ -31,11 +31,24 @@
                             (cfg/part topic)
                             (cfg/fields topic)))
 
+;; MAPPING
+;; (defn mapping
+;;   "Returns a fn that takes a fn of [result input] and returns a fn
+;;   that first calls f on the input"
+;;   [f]
+;;   (fn [f1]
+;;     (fn
+;;       ([result] (f1 result))
+;;       ([result input]
+;;          (f1 result (f input))))))
+
 (defn- mk-requests-ch
   [msg-ch]
   (let [topic-2-ch (mk-ids-chs msg-ch)]
-    (async/merge (map (partial mk-typed-requests-ch topic-2-ch)
-                      TOPICS))))
+    ;; TODO: `map<` is deprecated.  Replace w/ `mapping` (see above).
+    (map< (fn [req] {:request req, :resp-bodies []})
+          (async/merge (map (partial mk-typed-requests-ch topic-2-ch)
+                            TOPICS)))))
 
 ;;---------------------
 

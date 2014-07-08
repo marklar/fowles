@@ -59,6 +59,7 @@
   ;; FIXME: don't send clj-hmap, send original json.
   (let [resp-body (json/read-str body)
         msg       (:msg opts)]
+    (println "ok")
     (let [new-acc    (conj (:resp-bodies msg) resp-body)
           page-token (get resp-body "nextPageToken")]
       (if page-token

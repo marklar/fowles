@@ -2,7 +2,8 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as str]
             [zeromq.zmq :as zmq]
-            [clojure.core.async :refer [>!! alt!! timeout close!]]
+            [clojure.core.async :refer [chan close!
+                                        go-loop <! >! alt! timeout]]
             [clj-time
              [core :as t]
              [coerce :as c]
@@ -11,52 +12,34 @@
 ;;-------------------------------
 ;; async
 
-(defn- maybe-send-acc
-  [out-ch acc]
-  (if (> (count acc) 0)  ;; any?
-    (>!! out-ch acc)))
-
 (defn- get-n-in-ms
-  "Grab and send along up n items from in-ch within max-ms.
-   Return bool: whether to continue."
-  [in-ch n max-ms out-ch]
-  (let [t (timeout max-ms)]
-    (loop [i 0, acc []]
-      (if (= i n)
-        (do
-          (maybe-send-acc out-ch acc)
-          true)
-        (alt!!
-         t     ([_]
-                  (maybe-send-acc out-ch acc)
-                  true)
-         in-ch ([v]
-                  (if (nil? v)
-                    (do
-                      (maybe-send-acc out-ch acc)
-                      (close! out-ch)
-                      false)
-                    (recur (inc i) (conj acc v)))))))))
-
-(defn pipe-groups-of-up-to-n
-  "grab up to num items from from in-ch and return as one msg on out-ch"
-  [in-ch out-ch num max-wait-ms]
-  (loop [continue true]
-    (if continue
-      (let [c (get-n-in-ms in-ch num max-wait-ms out-ch)]
-        (recur c)))))
+  "Grab up to n items from in-ch within max-wait-ms.
+   Return [acc, bool]  (whether to continue)"
+  [in-ch n max-wait-ms]
+  (let [t (timeout max-wait-ms)]
+    (go-loop [i 0, acc []]
+             (if (= i n)
+               ;; Got enough.
+               [acc, true]
+               ;; Maybe get more...
+               (alt!
+                t     ([_] [acc, true])
+                in-ch ([v]
+                         (if (nil? v)
+                           [acc, false]
+                           (recur (inc i) (conj acc v)))))))))
 
 (defn mk-grouped-ch
-  [in-ch size max-wait-ms]
-  ;; Instead of starting a thread here, use `go`.
+  "grab up to num items from from in-ch and return as one msg on out-ch"
+  [in-ch num max-wait-ms]
   (let [out-ch (chan)]
-    (.start
-     (Thread.
-      #(pipe-groups-of-up-to-n in-ch out-ch size max-wait-ms)))
+    (go-loop []
+             (let [[acc c] (<! (get-n-in-ms in-ch num max-wait-ms))]
+               (if (seq acc) (>! out-ch acc))
+               (if c
+                 (recur)
+                 (close! out-ch))))
     out-ch))
-  ;; (let [out-ch (chan)]
-  ;;   (go (pipe-groups-of-up-to-n in-ch out-ch size wait-ms))
-  ;;   out-ch))
 
 ;;-------------------------------
 ;; ZMQ

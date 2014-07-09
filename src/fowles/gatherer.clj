@@ -34,6 +34,8 @@
            "\n   error :" error
            "\n   status:" status))
 
+;; TODO: Make these puts synchronous (i.e. >!!)?
+
 (defn- handle-bad
   [msg error status retries-ch sleep-ch failed-ch]
   (if (retriable? error status)
@@ -58,7 +60,7 @@
                 {:request (assoc-in req [:args :pageToken] page-token)
                  :resp-bodies new-acc})))
       (do
-        (println "ok.")
+        (println "ok")
         (go (>! bodies-ch
                 {:request req, :resp-bodies new-acc}))))))
 

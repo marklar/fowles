@@ -50,11 +50,13 @@
 (defn mk-pusher
   [host port]
   (let [pusher (util/mk-pusher host port)]
-    ;; acc is seq of 'resp-body', each a clj data structure (not json).
+    ;; acc is seq of 'resp-body', each a clj data structure (not json str).
     (fn [{:keys [request resp-bodies]}]
       (match (:query-type request)
-             (:or :channels :videos) (push-items pusher request resp-bodies)
-             :activities  (push-activities-fancy pusher request resp-bodies)
-             :playlistItems       (push-playlist pusher request resp-bodies)
+             ;; Don't use `:or`, as it doesn't always seem to work!?
+             :channels      (push-items pusher request resp-bodies)
+             :videos        (push-items pusher request resp-bodies)
+             :activities    (push-activities-fancy pusher request resp-bodies)
+             :playlistItems (push-playlist pusher request resp-bodies)
              ;; throw!
              :else nil))))

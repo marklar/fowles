@@ -5,7 +5,7 @@
    + Output: Put for requester."
   (:require [fowles.util :as util]
             [zeromq.zmq :as zmq]
-            [clojure.core.async :refer [go-loop chan >!]]))
+            [clojure.core.async :refer [go chan >!]]))
 
 (defn- mk-puller
   [ctx addr]
@@ -24,15 +24,14 @@
   [host port]
   (let [to-ch  (chan)
         ctx    (zmq/context)
-        addr   (util/mk-connect-addr host port)
-        puller (mk-puller ctx addr)]
-    (println "Ready to receive input from addr:" addr)
-    (go-loop []
-      (let [msg (zmq/receive-str puller)]
-        (println "receiving:" msg)
-        (if (>! to-ch msg)
-          (recur)
-          (do
-            (report-unused-input msg)
-            (zmq/close puller)))))
+        addr   (util/mk-connect-addr host port)]
+    (go
+     (with-open [puller (mk-puller ctx addr)]
+       (println "Ready to receive input from addr:" addr)
+       (loop []
+         (let [msg (zmq/receive-str puller)]
+           (println "receiving:" msg)
+           (if (>! to-ch msg)
+             (recur)
+             (report-unused-input msg))))))
     to-ch))

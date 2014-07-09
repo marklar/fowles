@@ -1,5 +1,5 @@
 (ns fowles.plumbing
-  (:require [clojure.core.async :refer [alts!! chan]]
+  (:require [clojure.core.async :refer [go-loop alts! chan]]
             [fowles
              [requester :as requester]
              [gatherer :as gatherer]]))
@@ -10,10 +10,10 @@
   [bodies-ch output-fn]
   ;; We do loop-recur instead of while
   ;; because maybe the channel will be closed.
-  (loop []
-    (let [[body c] (alts!! [bodies-ch])]
+  (go-loop []
+    (let [[body c] (alts! [bodies-ch])]
       (if (nil? body)
-        (println "Plumbing thread exiting.")
+        (println "Plumbing go-thread exiting.")
         (do
           (output-fn body)
           (recur))))))
@@ -65,4 +65,4 @@
                                       batch-size
                                       interval-ms
                                       sleep-ms)]
-    (.start (Thread. #(dequeue bodies-ch output-fn)))))
+    (dequeue bodies-ch output-fn)))

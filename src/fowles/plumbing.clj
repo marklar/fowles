@@ -18,7 +18,7 @@
           (output-fn body)
           (recur))))))
 
-(defn- get-bodies-channel
+(defn- mk-channels
   ":: ??"
   [requests-ch failed-ch api-keys
    batch-size interval-ms sleep-ms]
@@ -37,7 +37,10 @@
         bodies-ch (gatherer/gather responses-ch
                                    sleep-ch next-pages-ch
                                    retries-ch failed-ch)]
-    bodies-ch))
+    {:next-pages next-pages-ch
+     :retries    retries-ch
+     :responses  responses-ch
+     :bodies     bodies-ch}))
 
 ;;
 ;; TODO: Change this behavior to match doc string.
@@ -59,10 +62,11 @@
    batch-size interval-ms sleep-ms
    output-fn]
   ;; TODO: rename chan.
-  (let [bodies-ch (get-bodies-channel requests-ch
-                                      failed-ch
-                                      api-keys
-                                      batch-size
-                                      interval-ms
-                                      sleep-ms)]
-    (dequeue bodies-ch output-fn)))
+  (let [chs-map (mk-channels requests-ch
+                             failed-ch
+                             api-keys
+                             batch-size
+                             interval-ms
+                             sleep-ms)]
+    (dequeue (:bodies chs-map) output-fn)
+    chs-map))

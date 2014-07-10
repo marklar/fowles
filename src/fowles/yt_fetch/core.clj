@@ -1,5 +1,5 @@
 (ns fowles.yt-fetch.core
-  "Fetch videos by id (or list of ids)."
+  "Fetch videos/channels/activities/playlistItems by id."
   (:refer-clojure :exclude [merge])
   (:require [clojure.core.async :refer [merge map<] :as async]
             [fowles
@@ -59,16 +59,21 @@
   (failed/mk-ch (cfg/failed-host) (cfg/failed-port)))
 
 (defn- fetch []
-  (let [msg-ch (admitter/from-puller (cfg/in-host) (cfg/in-port))]
-    (util/prep-shutdown msg-ch)
-    (plumbing/report (mk-requests-ch msg-ch)
-                     (mk-failed-ch)
-                     (secret-cfg/api-keys)
-                     (cfg/batch-size)
-                     (cfg/interval-ms)
-                     (cfg/sleep-ms)
-                     (get-output-fn)))
-  (while true))
+  (let [msg-ch      (admitter/from-puller (cfg/in-host) (cfg/in-port))
+        requests-ch (mk-requests-ch msg-ch)
+        failed-ch   (mk-failed-ch)
+        chs-map     (plumbing/report requests-ch
+                                     failed-ch
+                                     (secret-cfg/api-keys)
+                                     (cfg/batch-size)
+                                     (cfg/interval-ms)
+                                     (cfg/sleep-ms)
+                                     (get-output-fn))]
+    (util/prep-shutdown (assoc chs-map
+                          :msg      msg-ch
+                          :requests requests-ch
+                          :failed   failed-ch))
+    (while true)))
 
 ;;---------------
 

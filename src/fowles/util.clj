@@ -1,9 +1,11 @@
 (ns fowles.util
   (:require [clojure.java.io :as io]
+            [clojure.data.json :as json]
             [clojure.string :as str]
             [zeromq.zmq :as zmq]
-            [clojure.core.async :refer [chan close!
-                                        go-loop <! >! alt! timeout]]
+            [clojure.core.async :refer [chan close! timeout
+                                        go-loop <! >! alt!
+                                        <!! alt!!]]
             [clj-time
              [core :as t]
              [coerce :as c]
@@ -18,27 +20,27 @@
   [in-ch n max-wait-ms]
   (let [t (timeout max-wait-ms)]
     (go-loop [i 0, acc []]
-             (if (= i n)
-               ;; Got enough.
-               [acc, true]
-               ;; Maybe get more...
-               (alt!
-                t     ([_] [acc, true])
-                in-ch ([v]
-                         (if (nil? v)
-                           [acc, false]
-                           (recur (inc i) (conj acc v)))))))))
+      (if (= i n)
+        ;; Got enough.
+        [acc, true]
+        ;; Maybe get more...
+        (alt!
+         t     ([_] [acc, true])
+         in-ch ([v]
+                  (if (nil? v)
+                    [acc, false]
+                    (recur (inc i) (conj acc v)))))))))
 
 (defn mk-grouped-ch
   "grab up to num items from from in-ch and return as one msg on out-ch"
   [in-ch num max-wait-ms]
   (let [out-ch (chan)]
     (go-loop []
-             (let [[acc c] (<! (get-n-in-ms in-ch num max-wait-ms))]
-               (if (seq acc) (>! out-ch acc))
-               (if c
-                 (recur)
-                 (close! out-ch))))
+      (let [[acc c] (<! (get-n-in-ms in-ch num max-wait-ms))]
+        (if (seq acc) (>! out-ch acc))
+        (if c
+          (recur)
+          (close! out-ch))))
     out-ch))
 
 ;;-------------------------------
@@ -60,35 +62,74 @@
 
 ;;----------------------------
 
+(def WAIT_MS 1000)
+
+(defn dequeue-all-timeout
+  [ch ms]
+  (let [t (timeout ms)]
+    (loop [acc []]
+      (alt!!
+       t  ([_] acc)
+       ch ([v]
+             (if (nil? v)
+               acc
+               (recur (conj acc v))))))))
+
+(defn print-msgs
+  [name ch]
+  (let [msgs (dequeue-all-timeout ch WAIT_MS)]
+    (json/pprint {name msgs})))
+
+(defn request-msg->input-msg
+  [request-msg]
+  (let [req (:request request-msg)
+        id-name (:id-name req)]
+    {:request (:query-type req)
+     id-name  (get-in req [:args id-name])}))
+
+(defn print-requests
+  [name ch]
+  (let [requests (map request-msg->input-msg
+                      (dequeue-all-timeout ch WAIT_MS))]
+    (json/pprint {name requests})))
+
+(defn print-pending-requests
+  [chs-map]
+  (println "*** :msg")
+  (doseq [msg (dequeue-all-timeout (:msg chs-map) WAIT_MS)]
+    (println msg))
+  (doseq [ch-name [:requests :next-pages :retries]]
+    (println "***" ch-name)
+    (doseq [msg (map request-msg->input-msg
+                     (dequeue-all-timeout (get chs-map ch-name) WAIT_MS))]
+      (json/pprint msg))))
+
+;;-----------------------
 
 (def SLEEP_SECS 5)
 
+(defn- wait-around []
+  (println "\nSleeping for" SLEEP_SECS
+           "seconds, to allow work to finish.")
+  (loop [i 0]
+    (if (< i SLEEP_SECS)
+      (do
+        (println "**")
+        (flush)
+        (Thread/sleep 1000)
+        (recur (inc i))))))
+
+;;-----------------------
+
 (defn prep-shutdown
-  [msg-ch]
+  [chs-map]
   (.addShutdownHook
    (Runtime/getRuntime)
    (Thread.
     (fn []
       ;; This stops any more input from coming in.
-      (close! msg-ch)
-
-      ;;
-      ;; Join on all threads.  Each will terminate
-      ;; if not receiving input for X seconds.
-      ;; OR
-      ;; Send a msg to each thread (via a channel)
-      ;; telling it to stop what it's doing and send its
-      ;; to-do items to the failure sink.
-      ;;
-
-      (println "\nSleeping for" SLEEP_SECS
-               "seconds, to allow work to finish.")
-      (loop [i 0]
-        (if (< i SLEEP_SECS)
-          (do
-            (print ".")
-            (flush)
-            (Thread/sleep 1000)
-            (recur (inc i)))
-          (println "\nExiting.")))))))
-
+      (close! (:msg chs-map))
+      (wait-around)
+      (doseq [name [:failed :bodies :responses]]
+        (print-msgs name (get chs-map name)))
+      (print-pending-requests chs-map)))))

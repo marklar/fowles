@@ -31,8 +31,8 @@
                             (cfg/part topic)
                             (cfg/fields topic)))
 
-;; MAPPING
-;; (defn mapping
+;; TRANSFORMER
+;; (defn transformer
 ;;   "Returns a fn that takes a fn of [result input] and returns a fn
 ;;   that first calls f on the input"
 ;;   [f]
@@ -45,7 +45,7 @@
 (defn- mk-requests-ch
   [msg-ch]
   (let [topic-2-ch (mk-ids-chs msg-ch)]
-    ;; TODO: `map<` is deprecated.  Replace w/ `mapping` (see above).
+    ;; TODO: `map<` is deprecated.  Replace w/ `transformer` (see above).
     (map< (fn [req] {:request req, :resp-bodies []})
           (async/merge (map (partial mk-typed-requests-ch topic-2-ch)
                             TOPICS)))))

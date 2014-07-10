@@ -106,7 +106,6 @@
 
 (def SLEEP_SECS 5)
 
-;; TODO: Make this an async.timeout?
 (defn- wait-around []
   (println "\nSleeping for" SLEEP_SECS
            "seconds, to allow work to finish.")
@@ -115,7 +114,7 @@
       (do
         (println "**")
         (flush)
-        (Thread/sleep 1000)
+        (<!! (timeout 1000))
         (recur (inc i))))))
 
 ;;-----------------------

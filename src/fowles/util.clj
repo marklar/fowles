@@ -5,7 +5,7 @@
             [zeromq.zmq :as zmq]
             [clojure.core.async :refer [chan close! timeout
                                         go-loop <! >! alt!
-                                        <!! alt!!]]
+                                        <!! >!! alt!!]]
             [clj-time
              [core :as t]
              [coerce :as c]
@@ -87,27 +87,26 @@
     {:request (:query-type req)
      id-name  (get-in req [:args id-name])}))
 
-(defn print-requests
-  [name ch]
-  (let [requests (map request-msg->input-msg
-                      (dequeue-all-timeout ch WAIT_MS))]
-    (json/pprint {name requests})))
-
 (defn print-pending-requests
   [chs-map]
   (println "*** :msg")
   (doseq [msg (dequeue-all-timeout (:msg chs-map) WAIT_MS)]
-    (println msg))
+    (do
+      (>!! (:failed chs-map) msg)
+      (println msg)))
   (doseq [ch-name [:requests :next-pages :retries]]
     (println "***" ch-name)
     (doseq [msg (map request-msg->input-msg
                      (dequeue-all-timeout (get chs-map ch-name) WAIT_MS))]
-      (json/pprint msg))))
+      (do
+        (>!! (:failed chs-map) (json/write-str msg))
+        (json/pprint msg)))))
 
 ;;-----------------------
 
 (def SLEEP_SECS 5)
 
+;; TODO: Make this an async.timeout?
 (defn- wait-around []
   (println "\nSleeping for" SLEEP_SECS
            "seconds, to allow work to finish.")
@@ -127,7 +126,7 @@
    (Runtime/getRuntime)
    (Thread.
     (fn []
-      ;; This stops any more input from coming in.
+      ;; Stop any more input from coming in.
       (close! (:msg chs-map))
       (wait-around)
       (doseq [name [:failed :bodies :responses]]

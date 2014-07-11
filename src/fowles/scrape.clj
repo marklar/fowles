@@ -22,10 +22,11 @@
 
 ;;---------------------------
 
-(def HEADERS {"User-Agent"      "Firefox/3.0.15"
-              "accept"          "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
-              "accept-language" "en-US,en;q=0.8"
-              "cache-control"   "max-age=0"})
+(def HEADERS
+  {"User-Agent"      "Firefox/3.0.15"
+   "accept"          "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
+   "accept-language" "en-US,en;q=0.8"
+   "cache-control"   "max-age=0"})
   
 (defn get-html
   [uri]

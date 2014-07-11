@@ -93,7 +93,7 @@
 	    "match_index": 1
 	},
 	"eow_category": {
-	    "regexp": "<p id=\"eow-category\"><a [^>]*>([^<]*)</a>",
+	    "regexp": "<p id=\"eow-category\">\\s*<a [^>]*>([^<]*)</a>",
 	    "match_index": 1
 	},
 	"ytp_author_attribution": {

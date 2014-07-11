@@ -1,5 +1,5 @@
 (ns fowles.gatherer
-  "Thread dedicated to outputing responses.
+  "Go-thread dedicated to outputing responses.
    Pull response off responses-channel.
    If response contains a nextPageToken (for search), queue up new URI."
   (:require [fowles.util :as util]
@@ -7,7 +7,7 @@
             [cemerick.url :refer [url-decode]]
             [clojure.string :as str]
             [clojure.data.json :as json]
-            [clojure.core.async :refer [chan >!! alts!!]]))
+            [clojure.core.async :refer [go go-loop chan <! >!]]))
 
 (def RETRIABLE_STATUS_CODES
   #{500 502 503 504})
@@ -34,75 +34,53 @@
            "\n   error :" error
            "\n   status:" status))
 
-(defn- handle-bad-response
-  ":: (hmap, chan, str) -> keyword"
-  [{:keys [error status opts]} sleep-ch retries-ch failed-ch]
-  (let [msg (:msg opts)]
+;; TODO: Make these puts synchronous (i.e. >!!)?
 
-    (if (retriable? error status)
-      ;; re-queue the same requests
-      (do
-        (log "requeueing" msg error status)
-        (>!! retries-ch msg)
-        (>!! sleep-ch :sleep))
-      ;; report failure
-      (do
-        (log "failed" msg error status)
-        (>!! failed-ch (json/write-str msg))))))
+(defn- handle-bad
+  [msg error status retries-ch sleep-ch failed-ch]
+  (if (retriable? error status)
+    (do
+      (log "requeueing" msg error status)
+      (go (>! retries-ch msg))
+      (go (>! sleep-ch :sleep)))
+    (do
+      (log "failed" msg error status)
+      (go (>! failed-ch (json/write-str msg))))))
 
-(defn- handle-good-response
-  ":: (hmap, chan, chan) -> keyword"
-  [{:keys [body opts]} next-pages-ch bodies-ch]
-  ;; FIXME: don't send clj-hmap, send original json.
-  ;; However, we do need to extract the nextPageToken.
+(defn- handle-good
+  [msg body bodies-ch next-pages-ch]
   (let [resp-body  (json/read-str body)
-        msg        (:msg opts)
         new-acc    (conj (:resp-bodies msg) resp-body)
         req        (:request msg)
         page-token (get resp-body "nextPageToken")]
-      (println "ok")
-      (if page-token
-        ;; We have another page to grab.  Loop back.
-        (>!! next-pages-ch 
-             {:request (assoc-in req [:args :pageToken] page-token)
-              :resp-bodies new-acc})
-        ;; We're done.  Send accumulated result to reporter.
-        (>!! bodies-ch
-             {:request req
-              :resp-bodies new-acc}))))
-
-(defn- handle-response
-  ":: (hmap, chan, chan, str) -> keyword"
-  [response sleep-ch next-pages-ch retries-ch bodies-ch failed-ch]
-  (let [{:keys [status error]} response]
-    (if (or error (not (success? status)))
-      (handle-bad-response response sleep-ch retries-ch failed-ch)
-      (handle-good-response response next-pages-ch bodies-ch))))
-
-(defn- dequeue
-  [responses-ch sleep-ch next-pages-ch retries-ch
-   bodies-ch failed-ch]
-  (loop []
-    (let [[response c] (alts!! [responses-ch])]
-      (if (nil? response)
-        nil
-        (do
-          (handle-response response sleep-ch
-                           next-pages-ch retries-ch
-                           bodies-ch failed-ch)
-          (recur))))))
+    (if page-token
+      (do
+        (println "ok...")
+        (go (>! next-pages-ch 
+                {:request (assoc-in req [:args :pageToken] page-token)
+                 :resp-bodies new-acc})))
+      (do
+        (println "ok")
+        (go (>! bodies-ch
+                {:request req, :resp-bodies new-acc}))))))
 
 ;;--------------------------------
 
 ;; TODO: Make a hashmap of name->channel.
-
+;; FIXME: rename chan.
 (defn gather
   ":: (chans*) -> chan
-   Given channel of responses, 'output' them in own Thread."
+   Given channel of responses, 'output' them."
   [responses-ch sleep-ch next-pages-ch retries-ch failed-ch]
-  ;; FIXME: rename chan.
   (let [bodies-ch (chan)]
-    (.start (Thread. #(dequeue responses-ch
-                               sleep-ch next-pages-ch retries-ch
-                               bodies-ch failed-ch)))
+    ;; Reading from responses-ch should never be nil.
+    ;; Because of loop-backs, the requester can never know
+    ;; when its input channels should close.
+    (go-loop []
+      (let [{:keys [status error body opts]} (<! responses-ch)
+            msg                              (:msg opts)]
+          (if (or error (not (success? status)))
+            (handle-bad msg error status retries-ch sleep-ch failed-ch)
+            (handle-good msg body bodies-ch next-pages-ch))
+          (recur)))
     bodies-ch))

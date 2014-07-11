@@ -1,5 +1,5 @@
 (ns fowles.yt-fetch.core
-  "Fetch videos by id (or list of ids)."
+  "Fetch videos/channels/activities/playlistItems by id."
   (:refer-clojure :exclude [merge])
   (:require [clojure.core.async :refer [merge map<] :as async]
             [fowles
@@ -31,8 +31,8 @@
                             (cfg/part topic)
                             (cfg/fields topic)))
 
-;; MAPPING
-;; (defn mapping
+;; TRANSFORMER
+;; (defn transformer
 ;;   "Returns a fn that takes a fn of [result input] and returns a fn
 ;;   that first calls f on the input"
 ;;   [f]
@@ -45,7 +45,7 @@
 (defn- mk-requests-ch
   [msg-ch]
   (let [topic-2-ch (mk-ids-chs msg-ch)]
-    ;; TODO: `map<` is deprecated.  Replace w/ `mapping` (see above).
+    ;; TODO: `map<` is deprecated.  Replace w/ `transformer` (see above).
     (map< (fn [req] {:request req, :resp-bodies []})
           (async/merge (map (partial mk-typed-requests-ch topic-2-ch)
                             TOPICS)))))
@@ -59,29 +59,33 @@
   (failed/mk-ch (cfg/failed-host) (cfg/failed-port)))
 
 (defn- fetch []
-  ;; Start plumbing Thread.
-  (let [msg-ch (admitter/from-puller (cfg/in-host) (cfg/in-port))]
-    (util/prep-shutdown msg-ch)
-    (plumbing/report (mk-requests-ch msg-ch)
-                     (mk-failed-ch)
-                     (secret-cfg/api-keys)
-                     (cfg/batch-size)
-                     (cfg/interval-ms)
-                     (cfg/sleep-ms)
-                     (get-output-fn)))
-  (while true))
+  (let [msg-ch      (admitter/from-puller (cfg/in-host) (cfg/in-port))
+        requests-ch (mk-requests-ch msg-ch)
+        failed-ch   (mk-failed-ch)
+        chs-map     (plumbing/report requests-ch
+                                     failed-ch
+                                     (secret-cfg/api-keys)
+                                     (cfg/batch-size)
+                                     (cfg/interval-ms)
+                                     (cfg/sleep-ms)
+                                     (get-output-fn))]
+    (util/prep-shutdown (assoc chs-map
+                          :msg      msg-ch
+                          :requests requests-ch
+                          :failed   failed-ch))
+    (while true)))
 
 ;;---------------
 
 ;; (defn- restart-self []
 ;;   (let [cmd (str "lein run")
-
+;;
 ;;   /* Build command: java -jar application.jar */
 ;;   final ArrayList<String> command = new ArrayList<String>();
 ;;   command.add(javaBin);
 ;;   command.add("-jar");
 ;;   command.add(currentJar.getPath());
-
+;;
 ;;   final ProcessBuilder builder = new ProcessBuilder(command);
 ;;   builder.start();
 ;;   System.exit(0);

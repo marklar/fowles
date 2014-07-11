@@ -1,5 +1,5 @@
 (ns fowles.plumbing
-  (:require [clojure.core.async :refer [alts!! chan]]
+  (:require [clojure.core.async :refer [go-loop alts! chan]]
             [fowles
              [requester :as requester]
              [gatherer :as gatherer]]))
@@ -10,15 +10,15 @@
   [bodies-ch output-fn]
   ;; We do loop-recur instead of while
   ;; because maybe the channel will be closed.
-  (loop []
-    (let [[body c] (alts!! [bodies-ch])]
+  (go-loop []
+    (let [[body c] (alts! [bodies-ch])]
       (if (nil? body)
-        (println "Plumbing thread exiting.")
+        (println "Plumbing go-thread exiting.")
         (do
           (output-fn body)
           (recur))))))
 
-(defn- get-bodies-channel
+(defn- mk-channels
   ":: ??"
   [requests-ch failed-ch api-keys
    batch-size interval-ms sleep-ms]
@@ -37,7 +37,10 @@
         bodies-ch (gatherer/gather responses-ch
                                    sleep-ch next-pages-ch
                                    retries-ch failed-ch)]
-    bodies-ch))
+    {:next-pages next-pages-ch
+     :retries    retries-ch
+     :responses  responses-ch
+     :bodies     bodies-ch}))
 
 ;;
 ;; TODO: Change this behavior to match doc string.
@@ -59,10 +62,11 @@
    batch-size interval-ms sleep-ms
    output-fn]
   ;; TODO: rename chan.
-  (let [bodies-ch (get-bodies-channel requests-ch
-                                      failed-ch
-                                      api-keys
-                                      batch-size
-                                      interval-ms
-                                      sleep-ms)]
-    (.start (Thread. #(dequeue bodies-ch output-fn)))))
+  (let [chs-map (mk-channels requests-ch
+                             failed-ch
+                             api-keys
+                             batch-size
+                             interval-ms
+                             sleep-ms)]
+    (dequeue (:bodies chs-map) output-fn)
+    chs-map))

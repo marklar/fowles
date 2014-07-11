@@ -13,13 +13,13 @@
 
 (defn- async-get
   "msg: {:request {}, :resp-bodies []}"
-  [msg keys-ch results-ch]
+  [msg keys-ch responses-ch]
   (let [api-key (deq-and-req keys-ch)
         new-msg (assoc-in msg [:request :args :key] api-key)
         uri     (uris/mk-uri (:request new-msg))]
     (http/get uri
               {:msg new-msg}  ;; gets added to 'opts' in callback
-              #(>!! results-ch %))))
+              #(>!! responses-ch %))))
 
 (defn- sleep-or-get
   [requests-ch api-keys responses-ch sleep-ch next-pages-ch retries-ch
@@ -76,13 +76,13 @@
 
 ;;------------------------
 
+(def BUFFER_SIZE 65536)
+
 (defn mk-requests
   ":: ?? "
   [requests-ch api-keys sleep-ch next-pages-ch retries-ch
    batch-size interval-ms sleep-ms]
-
-  ;; TODO: Bufferize results-ch.
-  (let [responses-ch (chan)]
+  (let [responses-ch (chan BUFFER_SIZE)]
     (sleep-or-get requests-ch api-keys responses-ch
                   sleep-ch next-pages-ch retries-ch
                   batch-size

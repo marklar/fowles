@@ -33,7 +33,11 @@
 (defn- push-activities-simple
   [pusher request resp-bodies]
   (let [all-items (flatten (map #(get % "items") resp-bodies))]
-    (zmq/send-str pusher (json/write-str all-items))))
+    (zmq/send-str pusher
+                  (json/write-str
+                   {:request   (:query-type request)
+                    :channelId (get-in request [:args :channelId])
+                    :response  all-items}))))
 
 (defn- push-activities-fancy
   [pusher request resp-bodies]
@@ -56,7 +60,7 @@
              ;; We don't use `:or` here because it seems not to work sometimes!?
              :channels      (push-items pusher request resp-bodies)
              :videos        (push-items pusher request resp-bodies)
-             :activities    (push-activities-fancy pusher request resp-bodies)
+             :activities    (push-activities-simple pusher request resp-bodies)
              :playlistItems (push-playlist pusher request resp-bodies)
              ;; throw!
              :else nil))))

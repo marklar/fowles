@@ -22,9 +22,9 @@
 		"num_per_request": 1
 	    },
 	    "args": {
-		"part": ["snippet"],
-		"fields": "nextPageToken,items(snippet(publishedAt,type))"
-	    }
+                "part": ["snippet","contentDetails"],
+                "fields": "nextPageToken,items(snippet(publishedAt,type),contentDetails(like(resourceId(videoId))))"
+            }
 	},
 
 	"playlistItems": {

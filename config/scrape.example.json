@@ -1,0 +1,86 @@
+{
+    "affiliation": {
+        "regexp": "\"content_owner_name\": \"([^\"]*)\"",
+	"index": 1
+    },
+    "preroll": {
+	"regexp": "\"ad_preroll\": \"([^\"]*)\"",
+	"index": 1
+    },
+    "premium_ads" {
+	"regexp": "\"show_instream\": (true|false)",
+	"index": 1
+    },
+    "show_afv": {
+	"regexp": "\"show_afv\": (true|false)",
+	"index": 1
+    },
+    "afv_user_id": {
+	"regexp": ",afv_user_id_([^,]*),",
+	"index": 1
+    },
+    "owner_id": {
+	"regexp": "\"owner_id\": \"([^\"]*)\"",
+	"index": 1
+    },
+    "pltype": {
+	"regexp": "\"pltype\": \"([^\"]*)\"",
+	"index": 1
+    },
+    "adsense1_number": {
+	"regexp": "\"ad_video_pub_id\": \"ca-pub-(\\d*)\"",
+	"index": 1
+    },
+    "adsense2_number": {
+	"regexp": "\"ad_host\": \"ca-host-pub-(\\d*)\"",
+	"index": 1
+    },
+    "video_duration": {
+	"regexp": "<meta itemprop=\"duration\" content=\"([^\"]*)\">",
+	"index": 1
+    },
+    "afv_video_min_cpm": {
+	"regexp": "\"afv_video_min_cpm\": (\\d*),",
+	"index": 1
+    },
+    "trueview": {
+	"regexp": "\"trueview\": (true|false)",
+	"index": 1
+    },
+    "unavailable": {
+	"regexp": "id=\"unavailable-message\"\\s*[^>]*>\\s*([^<]+?)\\s*</h1",
+	"index": 1
+    },
+    "family_friendly": {
+	"regexp": "itemprop=\"isFamilyFriendly\" content=\"(True|False)\"",
+	"index": 1
+    },
+    "ptk": {
+	"regexp": "\"ptk\": \"([^\"]*)\"",
+	"index": 1
+    },
+    "allowed_ads": {
+	"regexp": "\"allowed_ads\": \\[([^\\[]*)\\]",
+	"index": 1
+    },
+    "skipable": {
+	"regexp": "\"skipable\": \"([^\"]*)\"",
+	"index": 1
+    },
+    "as_launched_in_country": {
+	"regexp": "\"as_launched_in_country\": \"([^\"]*)\"",
+	"index": 1
+    },
+    "eow_category": {
+	"regexp": "<p id=\"eow-category\"><a [^>]*>([^<]*)</a>",
+	"index": 1
+    },
+    "ytp_author_attribution": {
+	"regexp": "YTP_AUTHOR_ATTRIBUTION[^>]*>([^<]*)<",
+	"index": 1
+    },
+    "keywords": {
+	"regexp": "<meta name=\"keywords\" content=\"([^\"]*)\">",
+	"index": 1
+    }
+}

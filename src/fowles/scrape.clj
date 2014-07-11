@@ -2,7 +2,7 @@
   (:use [clojure.java.io])
   (:require [clojure.data.json :as json]
             [zeromq.zmq :as zmq]
-            [clojure.core.async :refer [chan timeout go-loop <! >! >!!]]
+            [clojure.core.async :refer [chan timeout go-loop <!! <! >! >!!]]
             [org.httpkit.client :as http]))
 
 (defn load-cfg
@@ -79,7 +79,7 @@
        (< status 300)))
 
 (defn- handle-responses
-  "take responses off responses-ch, get vals, and report."
+  "Take responses off responses-ch, get vals, and report."
   [regexps-map responses-ch output-sock failed-sock]
   (go-loop []
     (let [{:keys [headers status body opts]} (<! responses-ch)
@@ -96,19 +96,29 @@
                                            :values   vals-map}))))))
     (recur)))
 
+(def BATCH_SIZE 5)
+(def MS 250)
+
 (defn- perform-queries
-  "get input, make requests, put on responses-ch"
-  [input-sock responses-ch]
-  (loop []
-    (let [video-id (zmq/receive-str input-sock)]
-      (if-not video-id
+  "Get input, make requests, put on responses-ch."
+  [cfg input-sock responses-ch]
+  (let [batch-size  (-> cfg :concurrency :batch_size)
+        interval-ms (-> cfg :concurrency :interval_ms)]
+    (loop [i 0]
+      (if (= i batch-size)
         (do
-          (println "done, but for now we recur anyway")
-          (recur))
-        (do
-          (println "receiving:" video-id)
-          (async-get responses-ch video-id)
-          (recur))))))
+          (println "pausing:" interval-ms "ms")
+          (<!! (timeout interval-ms))
+          (recur 0))
+        (let [video-id (zmq/receive-str input-sock)]
+          (if-not video-id
+            (do
+              (println "done, but for now we recur anyway")
+              (recur (inc i)))
+            (do
+              (println "receiving:" video-id)
+              (async-get responses-ch video-id)
+              (recur (inc i)))))))))
 
 (defn- report-readiness
   [cfg]
@@ -130,4 +140,4 @@
 
     (report-readiness cfg)
     (handle-responses regexps-map responses-ch output-sock failed-sock)
-    (perform-queries input-sock responses-ch)))
+    (perform-queries cfg input-sock responses-ch)))

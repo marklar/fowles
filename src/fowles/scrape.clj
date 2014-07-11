@@ -1,7 +1,9 @@
 (ns fowles.scrape
   (:use [clojure.java.io])
   (:require [clojure.data.json :as json]
-            [clj-http.client :as client]))
+            [zeromq.zmq :as zmq]
+            [clojure.core.async :refer [chan timeout go-loop <! >! >!!]]
+            [org.httpkit.client :as http]))
 
 (defn load-cfg
   "If cfg file exists, return cfg data.  Else, throw exception."
@@ -14,11 +16,27 @@
                             file-name
                             "' NOT found.")))))
 
-(def CFG_FILE_NAME "config/scrape.example.json")
+(def CFG_FILE_NAME "config/scrape.json")
 
-(defn get-regexps-map
-  []
+(defn get-cfg []
   (load-cfg CFG_FILE_NAME))
+
+;;---------------------------
+
+(def zmq-context (zmq/context 1))
+
+(defn mk-connect-addr
+  [host port]
+  (str "tcp://" host ":" port))
+
+(defn mk-socket
+  ":: (keyword, str, int) -> zmq-socket"
+  [push-or-pull host port]
+  (doto (zmq/socket zmq-context push-or-pull)
+    (zmq/connect (mk-connect-addr host port))))
+
+(def mk-pusher (partial mk-socket :push))
+(def mk-puller (partial mk-socket :pull))
 
 ;;---------------------------
 
@@ -28,17 +46,15 @@
    "accept-language" "en-US,en;q=0.8"
    "cache-control"   "max-age=0"})
   
-(defn get-html
-  [uri]
-  (let [response (client/get uri {:headers HEADERS})
-        {:keys [body error]} response]
-    (if error
-      nil
-      body)))
-
 (defn mk-uri
   [video-id]
   (str "https://www.youtube.com/watch?v=" video-id))
+
+(defn async-get
+  [responses-ch video-id]
+  (http/get (mk-uri video-id)
+            {:headers HEADERS, :video-id video-id}
+            #(>!! responses-ch %)))
 
 ;;---------------------------
 
@@ -51,15 +67,67 @@
 (defn get-values
   [regexps html]
   (apply merge
-   (for [[nm {:keys [regexp index]}] (sort regexps)]
-     {nm (scrape-val html regexp index)})))
+   (for [[nm {:keys [regexp match_index]}] (sort regexps)]
+     {nm (scrape-val html regexp match_index)})))
 
 ;;---------------------------
 
+(defn- success?
+  ":: int -> bool"
+  [status]
+  (and (>= status 200)
+       (< status 300)))
+
+(defn- handle-responses
+  "take responses off responses-ch, get vals, and report."
+  [regexps-map responses-ch output-sock failed-sock]
+  (go-loop []
+    (let [{:keys [headers status body opts]} (<! responses-ch)
+          video-id (:video-id opts)]
+      (if-not (success? status)
+        (do
+          (println "failed:" video-id)
+          (>! failed-sock video-id))
+        (do
+          (println "ok:" video-id)
+          (let [vals-map (get-values regexps-map body)]
+            (zmq/send-str output-sock
+                          (json/write-str {:video_id video-id
+                                           :values   vals-map}))))))
+    (recur)))
+
+(defn- perform-queries
+  "get input, make requests, put on responses-ch"
+  [input-sock responses-ch]
+  (loop []
+    (let [video-id (zmq/receive-str input-sock)]
+      (if-not video-id
+        (do
+          (println "done, but for now we recur anyway")
+          (recur))
+        (do
+          (println "receiving:" video-id)
+          (async-get responses-ch video-id)
+          (recur))))))
+
+(defn- report-readiness
+  [cfg]
+  (println "Ready to receive input from addr:"
+           (mk-connect-addr (-> cfg :servers :input :host)
+                            (-> cfg :servers :input :port))))
+
 (defn -main
   []
-  (let [regexps (get-regexps-map)
-        html (get-html (mk-uri "3WngGeI9lnA"))]
-    (if html
-      (json/pprint (get-values regexps html))
-      (println "Failure to fetch page."))))
+  (let [cfg         (get-cfg)
+        regexps-map (:values cfg)
+        input-sock   (mk-puller (-> cfg :servers :input :host)
+                                (-> cfg :servers :input :port))
+        output-sock  (mk-pusher (-> cfg :servers :output :host)
+                                (-> cfg :servers :output :port))
+        failed-sock  (mk-pusher (-> cfg :servers :failed :host)
+                                (-> cfg :servers :failed :port))
+        responses-ch (chan)]
+
+    (report-readiness cfg)
+    (handle-responses regexps-map responses-ch output-sock failed-sock)
+    (perform-queries input-sock responses-ch)))
